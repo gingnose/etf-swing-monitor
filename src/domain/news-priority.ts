@@ -21,10 +21,11 @@ export function prioritizeNews(item:PriorityInput,now:Date):Priority {
  let level:Priority['level']=critical?'critical':relevant&&(core||theme)?'important':'normal';
  let direction:Priority['direction']='unknown';
  if(!uncertain&&!roundup){if(guidance)direction=up&&down?'mixed':up?'positive':down?'negative':'unknown';else if(exportAction){const good=/\b(lifts?|eases?|removes?)\b/.test(t),bad=/\b(imposes?|tightens?|restricts?|bans?)\b/.test(t);direction=good&&bad?'mixed':good?'positive':bad?'negative':'unknown';}}
- const concern=(policy&&/\braises?\b/.test(t))||direction==='negative'||direction==='mixed'||(direction==='unknown'&&/\b(cuts?|lowers?|slashes?|restrictions?|sanctions?|tariffs?|bans?|shortage|disruption|delay|delays|misses|weak|decline|downgrades?)\b/.test(t));
+ // A reduction is not inherently adverse: lower power/costs/severity must not be flagged.
+ const concern=(policy&&/\braises?\b/.test(t))||direction==='negative'||direction==='mixed'||(direction==='unknown'&&((guidance&&down)||/\b(restrictions?|sanctions?|tariffs?|bans?|shortages?|disruptions?|downgrades?)\b|\b(production|shipment|shipments|supply)\b.{0,25}\b(delays?|halts?|suspensions?)\b|\b(delays?|halts?|suspends?)\b.{0,25}\b(production|shipments?|supply)\b|\b(weak|weakening|slowing) (demand|sales|growth)\b|\b(revenue|earnings|profit|profits|sales|margins|guidance|outlook)\b.{0,25}\b(miss(?:es)?|declines?|cuts?|falls?|lowered)\b|\b(cuts?|lowers?|slashes?)\b.{0,20}\b(guidance|outlook|forecast)\b/.test(t)));
  if(concern&&relevant&&level==='normal')level='important';
  const category=policy?'monetary-decision':results?'earnings-release':guidance?'guidance-change':exportAction?'chip-export-policy':null;
- const reason=policy?'FRBの金融政策決定・声明':results?'NVIDIAの公式決算発表':guidance?'主要企業の業績見通し変更':exportAction?'米国の半導体輸出政策の変更':theme?'業績・政策・供給に関する関連情報':concern?'制限・悪化などの表現を含むため確認が必要':'直接的な重要事実を見出しから特定できません';
+ const reason=policy?'FRBの金融政策決定・声明':results?'NVIDIAの公式決算発表':guidance?'主要企業の業績見通し変更':exportAction?'米国の半導体輸出政策の変更':theme?'業績・政策・供給に関する関連情報':concern?'規制・業績・供給の懸念に関する表現を含むため確認が必要':'直接的な重要事実を見出しから特定できません';
  return {version:PRIORITY_VERSION,level,concern,recent:age>=0&&age<=7*86400000,score:(level==='critical'?100:level==='important'?50:0)+(item.source!=='alpaca'?10:0)+(fresh?5:0),direction,
  reason:reason+(uncertain?'（予想・否定などの表現を含む）':roundup?'（解説・総括記事）':''),
  uncertainty:'見出しと配信元による推定。本文・真偽・織り込み状況は未確認で、ETFの値動きや売買の推奨を示しません。',

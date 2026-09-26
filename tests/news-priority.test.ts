@@ -26,3 +26,11 @@ test('publication time controls freshness; update time cannot revive an old stor
  const old=rank('Nvidia cuts guidance','alpaca','2026-09-20T10:00:00Z');assert.equal(old.level,'important');assert.equal(old.eventKey,null);
  assert.notEqual(rank('Nvidia cuts guidance','alpaca','2026-09-28T10:00:00Z').level,'critical');
 });
+
+test('efficiency improvements and lower incident severity are not adverse material',()=>{
+ for(const title of ['Nvidia cuts power use compared with plastic substrates','Nvidia lowers operating costs','Review finds incidents were lower severity with no evidence of meaningful impact','Nvidia cuts emissions and improves production efficiency']){
+  const result=rank(title);assert.equal(result.concern,false,title);assert.notEqual(result.level,'critical',title);
+ }
+ assert.equal(rank('Nvidia faces weak demand').concern,true);
+ assert.equal(rank('Nvidia delays chip production').concern,true);
+});
