@@ -1,9 +1,12 @@
 import React, { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./styles.css";
+import ResearchPanel, { type ResearchPayload } from "./ResearchPanel";
 
 type Status = {
   phase: "validation";
+  research?: ResearchPayload;
+  scheduledChecksEnabled?: boolean;
   configured: { alpaca: boolean; push: boolean };
   latestRun: { status: string; createdAt: string; detail: string } | null;
   bars: {
@@ -18,7 +21,7 @@ type Status = {
   dataState?: "available" | "stale" | "unavailable";
   latestNotification?: { status: string; detail: string | null; dueAt: number } | null;
 };
-type Result = { ok: boolean; detail: string };
+type Result = { ok: boolean; detail: string; jobId?: string };
 class ApiError extends Error {
   constructor(
     message: string,
@@ -33,7 +36,7 @@ async function api<T>(
   body?: unknown,
 ): Promise<T> {
   const controller = new AbortController();
-  const timeout = window.setTimeout(() => controller.abort(), 20000);
+  const timeout = window.setTimeout(() => controller.abort(), 35000);
   try {
     const response = await fetch(`/api/${path}`, {
       method,
@@ -294,14 +297,14 @@ function App() {
       </header>
       <main id="main">
         <section className="intro">
-          <p className="eyebrow">CONNECTION CHECK / 01</p>
+          <p className="eyebrow">MARKET RESEARCH / 02</p>
           <h1>
-            接続を確かめる<span>。</span>
+            値動きを確かめる<span>。</span>
           </h1>
           <p>
-            データが届く。通知が届く。
+            価格の履歴と、判断の土台を。
             <br className="mobile-break" />
-            まずは、その仕組みから。
+            まずは、数値を確かめるところから。
           </p>
           <div className="scope">
             <span aria-hidden="true">◇</span>{" "}
@@ -445,6 +448,8 @@ function App() {
                   );
                 })}
               </div>
+              <ResearchPanel research={status.research ?? null} />
+              <p className="fine">価格の定期更新：{status.scheduledChecksEnabled ? "有効（毎日9:15・15:15・21:15 JSTごろ）" : "停止中（手動で更新できます）"}</p>
               <div className="checks-grid">
                 <section className="panel check">
                   <div className="step">
@@ -471,7 +476,13 @@ function App() {
                     disabled={disabled || !status.configured.alpaca}
                     onClick={() =>
                       void action("check", async () => {
-                        const result = await api<Result>("check", "POST").catch(async (reason) => {
+                        await api<Result>("calendar", "POST");
+                        const result = await (async () => {
+                          const started = await api<Result>("check", "POST", {stage:"start"});
+                          if (!started.jobId) throw new Error("更新処理を開始できませんでした。");
+                          await api<Result>("check", "POST", {stage:"continue",jobId:started.jobId});
+                          return await api<Result>("check", "POST", {stage:"publish",jobId:started.jobId});
+                        })().catch(async (reason) => {
                           await refresh().catch(() => undefined);
                           throw reason;
                         });
@@ -735,7 +746,7 @@ function App() {
       <footer>
         <span>ETF MONITOR</span>
         <p>
-          まずは接続を、確実に。
+          日足から、市場を読み解く。
           <br />
           技術検証専用 · 売買シグナルなし
         </p>

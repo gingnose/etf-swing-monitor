@@ -108,6 +108,43 @@ try {
   const manifest = await fetch(base + '/manifest.webmanifest');
   assert.equal(manifest.status, 200);
   assert.equal((await manifest.json()).display, 'standalone');
+  assert.equal((await fetch(base + '/api/research')).status, 401);
+  const loginResearch = await req('/api/session', { token });
+  const researchCookie = loginResearch.headers.get('Set-Cookie').split(';')[0];
+  const getResearch = () => fetch(base + '/api/research', { headers: { Cookie: researchCookie } });
+  assert.equal((await (await getResearch()).json()).state, 'unavailable');
+  const current = new Date();
+  const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' }).format(current);
+  const yesterday = new Date(Date.parse(today+'T00:00:00Z') - 86400_000).toISOString().slice(0,10);
+  const future = new Date(Date.parse(today+'T00:00:00Z') + 14*86400_000).toISOString().slice(0,10);
+  const fixture = { version:'close-indicators-v1', calendar:{ dates:[yesterday,today],through:future }, snapshots:['SOXL','TQQQ'].map(symbol=>({ symbol,asOf:yesterday,start:yesterday,retrievedAt:current.toISOString(),count:1,feed:'sip',adjustment:'split',metrics:{sma20:null,sma50:null,sma200:null,rsi14:null,return20Pct:null,drawdown63Pct:null},closes:[{date:yesterday,close:100}] })),latestBars:[] };
+  const payloadSql = JSON.stringify(fixture).replaceAll("'", "''");
+  cli(['d1','execute','DB','--local','--command',`INSERT INTO market_history VALUES ('sip','${current.toISOString()}','${yesterday}','fixture-hash','${payloadSql}'); INSERT INTO runs VALUES ('history-success','success','${current.toISOString()}','fixture');`]);
+  const research = await (await getResearch()).json();
+  assert.equal(research.state,'available');assert.equal(research.snapshots.length,2);
+  assert.equal(research.snapshots[0].metrics.sma200,null);
+  // A slower, older refresh cannot replace the current coherent window.
+  cli(['d1','execute','DB','--local','--command',`INSERT INTO market_history VALUES ('sip','2000-01-01','2000-01-01','old','{}') ON CONFLICT(feed) DO UPDATE SET payload=excluded.payload,requested_at=excluded.requested_at WHERE excluded.requested_at>=market_history.requested_at;`]);
+  assert.equal((await (await getResearch()).json()).inputHash,'fixture-hash');
+  // Publish a staged complete pair through the real Worker/D1 transaction.
+  const jobId = '12345678-1234-1234-1234-123456789abc';
+  const jobStart = new Date();
+  const quote = value => JSON.stringify(value).replaceAll("'", "''");
+  const parts = fixture.snapshots.map(snapshot=>({snapshot,latestBar:{symbol:snapshot.symbol,timestamp:yesterday+'T04:00:00Z',close:100,volume:100,feed:'sip'}}));
+  cli(['d1','execute','DB','--local','--command',`INSERT INTO market_collection_jobs(id,state,feed,requested_at,ny_date,expires_at,updated_at,calendar_payload,soxl_payload,tqqq_payload) VALUES ('${jobId}','ready','sip','${jobStart.toISOString()}','${today}','${new Date(jobStart.getTime()+1800000).toISOString()}','${jobStart.toISOString()}','${quote({...fixture.calendar,today})}','${quote(parts[0])}','${quote(parts[1])}');`]);
+  assert.equal((await req('/api/check',{stage:'publish',jobId},researchCookie)).status,200);
+  assert.equal((await req('/api/check',{stage:'publish',jobId},researchCookie)).status,409);
+  const published = await (await getResearch()).json();
+  assert.equal(published.collectionId,jobId);
+  assert.equal(published.latestBars.length,2);
+  assert.equal(published.state,'available');
+  // Stale history is retained but not presented as current metrics.
+  fixture.calendar.through='2000-01-01';
+  cli(['d1','execute','DB','--local','--command',`UPDATE market_history SET payload='${JSON.stringify(fixture).replaceAll("'","''")}' WHERE feed='sip'`]);
+  assert.equal((await (await getResearch()).json()).state,'stale');
+  assert.deepEqual((await (await getResearch()).json()).snapshots,[]);
+  await fetch(base+'/api/logout',{method:'POST',headers:{Origin:base,'Content-Type':'application/json',Cookie:researchCookie},body:'{}'});
+  console.log('PASS: private history API, insufficient-history nulls, stale suppression and concurrent update guard');
   console.log('PASS: isolated Worker+D1 integration (owner auth, CSRF, secret isolation, missing data, endpoint validation, scheduled tests, concurrent daily cap, logout, PWA)');
   if (process.argv.includes('--browser')) {
     const { chromium } = await import('@playwright/test');

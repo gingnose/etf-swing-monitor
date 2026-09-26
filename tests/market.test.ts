@@ -70,3 +70,14 @@ test('リダイレクトは追跡せずエラーにし、接続エラーの秘�
     throw new TypeError('redirect error fixture-secret');
   }) as typeof fetch), error => error instanceof Error && error.message.includes('リダイレクト') && !error.message.includes('fixture-secret'));
 });
+
+test('400-day window requests shared capacity for both symbols and refuses unfinished pages',async()=>{
+ const url=barsUrl(now,'sip',undefined,400);
+ assert.equal(url.searchParams.get('limit'),'1000');
+ assert.equal(url.searchParams.get('start'),'2025-08-22T00:00:00.000Z');
+ let calls=0;
+ await assert.rejects(fetchDailyBars({ALPACA_API_KEY:'x',ALPACA_API_SECRET:'y'},now,(async()=>{
+   calls++;return Response.json({bars:{SOXL:[bar],TQQQ:[bar]},next_page_token:'repeated-token'});
+ }) as typeof fetch,400),/上限/);
+ assert.equal(calls,4);
+});

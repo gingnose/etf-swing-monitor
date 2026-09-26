@@ -78,4 +78,5 @@ export async function processNotificationJobs(env: Env, now = new Date()) {
     }
     await env.DB.prepare('UPDATE notification_jobs SET status=?,detail=? WHERE id=?').bind(state, detail, job.id).run();
   }
+  return jobs.results.length > 0;
 }

@@ -1,19 +1,18 @@
 import { AppError, type Bar, type Env } from './types.ts';
 
 const symbols = ['SOXL', 'TQQQ'] as const;
-export function nyDate(now: Date) {
-  return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
-}
+const nyFormatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' });
+export function nyDate(now: Date) { return nyFormatter.format(now); }
 
-export function barsUrl(now: Date, feed: 'sip' | 'iex', page?: string) {
+export function barsUrl(now: Date, feed: 'sip' | 'iex', page?: string, lookbackDays = 21, requestedSymbols: readonly string[] = symbols) {
   const url = new URL('https://data.alpaca.markets/v2/stocks/bars');
   // Exclude the current NY date entirely, even on early-close days. P1 is a
   // completed-daily-bars probe, not a real-time quote or a trading engine.
   const cutoff = new Date(`${nyDate(now)}T00:00:00.000Z`);
   url.search = new URLSearchParams({
-    symbols: symbols.join(','), timeframe: '1Day', feed, adjustment: 'split', currency: 'USD',
-    start: new Date(cutoff.getTime() - 21 * 86400_000).toISOString(),
-    end: new Date(cutoff.getTime() - 1).toISOString(), limit: '100', sort: 'desc',
+    symbols: requestedSymbols.join(','), timeframe: '1Day', feed, adjustment: 'split', currency: 'USD',
+    start: new Date(cutoff.getTime() - lookbackDays * 86400_000).toISOString(),
+    end: new Date(cutoff.getTime() - 1).toISOString(), limit: lookbackDays > 21 ? '1000' : '100', sort: 'desc',
     ...(page ? { page_token: page } : {}),
   }).toString();
   return url;
@@ -24,6 +23,8 @@ export function parseBars(payload: unknown, feed: 'sip' | 'iex', now: Date): { b
   const data = payload as { bars: Record<string, unknown>; next_page_token?: unknown };
   if (!data.bars || typeof data.bars !== 'object') throw new AppError(502, '価格データが空です。');
   const result: Bar[] = [];
+  const today = nyDate(now);
+
   for (const symbol of symbols) {
     const rows = data.bars[symbol];
     if (rows === undefined || rows === null) continue;
@@ -33,7 +34,11 @@ export function parseBars(payload: unknown, feed: 'sip' | 'iex', now: Date): { b
       const { t, c, v } = row;
       if (typeof t !== 'string' || !Number.isFinite(Date.parse(t)) || typeof c !== 'number' || !Number.isFinite(c) || c <= 0 ||
           typeof v !== 'number' || !Number.isFinite(v) || v < 0) throw new AppError(502, '価格または時刻を確認できません。');
-      if (nyDate(new Date(t)) >= nyDate(now)) continue;
+      // Alpaca daily bars are stamped at NY midnight (04:00/05:00 UTC).
+      // Compare their market-date prefix directly, avoiding per-row timezone formatting.
+      if (!/^\d{4}-\d{2}-\d{2}T0[45]:00:00(?:\.000)?Z$/.test(t)) throw new AppError(502, '日足の基準時刻が不正です。');
+      const marketDate = t.slice(0,10);
+      if (marketDate >= today) continue;
       result.push({ symbol, close: c, volume: v, timestamp: t, feed });
     }
   }
@@ -41,7 +46,9 @@ export function parseBars(payload: unknown, feed: 'sip' | 'iex', now: Date): { b
   return { bars: result, next: data.next_page_token as string || null };
 }
 
-export async function fetchDailyBars(env: Pick<Env, 'ALPACA_API_KEY' | 'ALPACA_API_SECRET' | 'ALPACA_FEED'>, now = new Date(), fetcher: typeof fetch = fetch): Promise<Bar[]> {
+export async function fetchDailyBars(env: Pick<Env, 'ALPACA_API_KEY' | 'ALPACA_API_SECRET' | 'ALPACA_FEED'>, now = new Date(), fetcher: typeof fetch = fetch, lookbackDays = 21, requestedSymbols: readonly string[] = symbols): Promise<Bar[]> {
+  if (!requestedSymbols.length || requestedSymbols.some(s => !['SOXL','TQQQ'].includes(s))) throw new AppError(400,'対象銘柄が不正です。');
+  if (![21, 400].includes(lookbackDays)) throw new AppError(400, '取得期間が不正です。');
   if (!env.ALPACA_API_KEY || !env.ALPACA_API_SECRET) throw new AppError(503, 'AlpacaのAPIキーが未設定です。');
   if (env.ALPACA_FEED !== undefined && !['sip', 'iex'].includes(env.ALPACA_FEED)) throw new AppError(503, '価格データの取得元設定が不正です。');
   const feed = (env.ALPACA_FEED || 'sip') as 'sip' | 'iex';
@@ -50,7 +57,7 @@ export async function fetchDailyBars(env: Pick<Env, 'ALPACA_API_KEY' | 'ALPACA_A
   for (let page = 0; page < 4; page++) {
     let response: Response;
     try {
-      response = await fetcher(barsUrl(now, feed, next || undefined), {
+      response = await fetcher(barsUrl(now, feed, next || undefined, lookbackDays, requestedSymbols), {
         headers: { 'APCA-API-KEY-ID': env.ALPACA_API_KEY, 'APCA-API-SECRET-KEY': env.ALPACA_API_SECRET },
         signal: AbortSignal.timeout(12_000), redirect: 'manual',
       });
@@ -72,35 +79,15 @@ export async function fetchDailyBars(env: Pick<Env, 'ALPACA_API_KEY' | 'ALPACA_A
     let payload: unknown;
     try { payload = await response.json(); } catch { throw new AppError(502, 'Alpacaの応答を読み取れませんでした。'); }
     const parsed = parseBars(payload, feed, now);
-    all.push(...parsed.bars);
+    all.push(...parsed.bars.filter(b=>requestedSymbols.includes(b.symbol)));
     next = parsed.next;
     if (!next) break;
   }
   if (next) throw new AppError(502, '取得ページ数の上限です。不完全なデータを採用しません。');
-  const latest = symbols.map(symbol => all.filter(b => b.symbol === symbol).sort((a, b) => b.timestamp.localeCompare(a.timestamp))[0]);
+  const latest = requestedSymbols.map(symbol => all.filter(b => b.symbol === symbol).reduce<Bar | undefined>((a,b)=>!a || b.timestamp>a.timestamp ? b : a,undefined));
   if (latest.some(b => !b)) throw new AppError(502, 'SOXLとTQQQの両方の価格が揃っていません。');
   // A full exchange-calendar freshness check belongs to P2. This coarse bound
   // rejects grossly stale responses; always display the actual market timestamp.
-  if (latest.some(b => now.getTime() - Date.parse(b.timestamp) > 7 * 86400_000)) throw new AppError(502, '価格が古いため、取得成功として扱いません。');
+  if (latest.some(b => !b || now.getTime() - Date.parse(b.timestamp) > 7 * 86400_000)) throw new AppError(502, '価格が古いため、取得成功として扱いません。');
   return all;
-}
-
-export async function runMarketCheck(env: Env, now = new Date()) {
-  const id = crypto.randomUUID();
-  try {
-    const bars = await fetchDailyBars(env, now);
-    const detail = 'SOXL・TQQQの日足を取得しました。売買判断はまだ行いません。';
-    await env.DB.batch([
-      ...bars.map(b => env.DB.prepare(`INSERT INTO bars(symbol,timestamp,close,volume,feed,adjustment,received_at)
-        VALUES (?,?,?,?,?,'split',?) ON CONFLICT(symbol,timestamp,feed) DO UPDATE SET close=excluded.close,volume=excluded.volume,received_at=excluded.received_at`)
-        .bind(b.symbol, b.timestamp, b.close, b.volume, b.feed, now.toISOString())),
-      env.DB.prepare('INSERT INTO runs(id,status,created_at,detail) VALUES (?,?,?,?)').bind(id, 'success', now.toISOString(), detail),
-    ]);
-    return { ok: true, detail };
-  } catch (error) {
-    const detail = error instanceof AppError ? error.message : '取得処理を完了できませんでした。';
-    await env.DB.prepare('INSERT INTO runs(id,status,created_at,detail) VALUES (?,?,?,?)')
-      .bind(id, 'failed', now.toISOString(), detail).run();
-    throw error instanceof AppError ? error : new AppError(503, detail);
-  }
 }
