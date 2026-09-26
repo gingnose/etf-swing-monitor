@@ -1,0 +1,28 @@
+# Credentials and local configuration
+.env
+.env.*
+!.env.example
+.dev.vars
+.dev.vars.*
+*.pem
+*.key
+
+# Dependencies and build output
+node_modules/
+dist/
+coverage/
+.wrangler/
+
+# Private operational data
+private/
+data/
+backups/
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+*.sqlite-*
+*.log
+
+# OS files
+.DS_Store
