@@ -6,6 +6,7 @@ import NewsPanel from "./NewsPanel";
 import PriceRulesPanel from "./PriceRulesPanel";
 import PortfolioPanel from "./PortfolioPanel";
 import ResearchPanel, { type ResearchPayload } from "./ResearchPanel";
+import "./modern.css";
 
 type Status = {
   phase: "validation";
@@ -298,25 +299,10 @@ function App() {
         </a>
         <span className="environment">
           <i />
-          技術検証
+          PERSONAL
         </span>
       </header>
       <main id="main">
-        <section className="intro">
-          <p className="eyebrow">MARKET RESEARCH / 02</p>
-          <h1>
-            値動きを確かめる<span>。</span>
-          </h1>
-          <p>
-            価格の履歴と、判断の土台を。
-            <br className="mobile-break" />
-            まずは、数値を確かめるところから。
-          </p>
-          <div className="scope">
-            <span aria-hidden="true">◇</span>{" "}
-            現在は技術検証フェーズです。売買シグナルは提供していません。
-          </div>
-        </section>
         <div className="messages" aria-live="polite" aria-atomic="true">
           {!online && (
             <p className="message error">
@@ -394,6 +380,10 @@ function App() {
         ) : (
           status && (
             <>
+              <PriceRulesPanel onRefreshNews={()=>setNewsRefresh(n=>n+1)} newsReview={newsReview} api={api} onAuthError={fail} dataKey={JSON.stringify([status.dataState,status.latestRun?.createdAt,status.research?.snapshots.map(s=>s.retrievedAt)])} />
+              <NewsPanel refreshKey={newsRefresh} api={api} onAuthError={fail} onReview={setNewsReview} />
+              <details className="dashboard-fold" id="assets"><summary>資産・取引記録 <span>残高と購入履歴</span></summary><PortfolioPanel api={api} onAuthError={fail} /></details>
+              <details className="dashboard-fold"><summary>価格・チャートの詳細 <span>移動平均・RSI</span></summary>
               <div className="section-heading">
                 <h2>マーケットデータ</h2>
                 <span>Alpaca / 実測値のみ</span>
@@ -454,10 +444,8 @@ function App() {
                   );
                 })}
               </div>
-              <PriceRulesPanel onRefreshNews={()=>setNewsRefresh(n=>n+1)} newsReview={newsReview} api={api} onAuthError={fail} dataKey={JSON.stringify([status.dataState,status.latestRun?.createdAt,status.research?.snapshots.map(s=>s.retrievedAt)])} />
-              <NewsPanel refreshKey={newsRefresh} api={api} onAuthError={fail} onReview={setNewsReview} />
-              <PortfolioPanel api={api} onAuthError={fail} />
-              <ResearchPanel research={status.research ?? null} />
+              <ResearchPanel research={status.research ?? null} /></details>
+              <details className="dashboard-fold" id="settings"><summary>通知・データ設定 <span>接続と更新履歴</span></summary>
               <p className="fine">価格の定期更新：{status.scheduledChecksEnabled ? "有効（毎日9:15・15:15・21:15 JSTごろ）" : "停止中（手動で更新できます）"}</p>
               <div className="checks-grid">
                 <section className="panel check">
@@ -727,6 +715,7 @@ function App() {
                   <p className="fine">通知サービスの受付と、端末への到着は別です。</p>
                 </section>
               )}
+              </details>
               <div className="session">
                 <span>
                   <i />
@@ -757,7 +746,7 @@ function App() {
         <p>
           日足から、市場を読み解く。
           <br />
-          技術検証専用 · 売買シグナルなし
+          PERSONAL専用 · 売買シグナルなし
         </p>
       </footer>
     </div>

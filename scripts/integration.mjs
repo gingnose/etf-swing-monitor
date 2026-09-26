@@ -285,7 +285,11 @@ try {
       await page.goto(base);
       await page.getByLabel('所有者キー', { exact: true }).fill(token);
       await page.getByRole('button', { name: '安全に接続する' }).click();
-      await page.getByRole('heading', { name: 'マーケットデータ' }).waitFor();
+      await page.getByRole('heading', { name: 'ウォッチリスト' }).waitFor();
+      assert.equal(await page.evaluate(()=>getComputedStyle(document.documentElement).colorScheme),'light');
+      await expect(page.locator('#settings')).not.toHaveAttribute('open','');
+      await expect(page.locator('#assets')).not.toHaveAttribute('open','');
+      await page.locator('#settings > summary').click();
       assert.equal(await page.getByRole('button', { name: 'データ取得を確認' }).isEnabled(), false);
       assert.equal(await page.getByRole('button', { name: 'テスト通知を送る' }).count(), 0);
       assert.equal(await page.getByRole('button', { name: '通知を予約して閉じる' }).isEnabled(), false);
@@ -298,9 +302,11 @@ try {
       await newsPanel.getByRole('button',{name:'参考記事も含めて表示（9件）'}).click();
       await expect(newsPanel.locator('.news-articles > li')).toHaveCount(9);
       await expect(newsPanel.getByRole('link',{name:'Fixture: company denies outlook rumor'})).toBeVisible();
+      await newsPanel.getByText('取得状況・判定方法',{exact:true}).click();
       await newsPanel.getByText('情報源の取得状況（3件）',{exact:true}).click();
       await expect(newsPanel.getByText('取得失敗',{exact:true})).toBeVisible();
       await expect(newsPanel.getByText(/悪材料がない証拠ではなく/)).toBeVisible();
+      await newsPanel.locator('.news-articles > li').first().getByText('根拠・詳細',{exact:true}).click();
       await expect(newsPanel.getByText(/優先した理由：/).first()).toBeVisible();
       const articleLink=newsPanel.getByRole('link',{name:'Fixture: company denies outlook rumor'});
       await expect(articleLink).toHaveAttribute('rel','noopener noreferrer');
@@ -323,6 +329,7 @@ try {
       assert.equal((await observed).status(),200);
       await expect(rulePanel).toHaveAttribute('aria-busy','false');
       assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),true);
+      await page.locator('#assets > summary').click();
       const portfolio = page.getByRole('region', { name: '資産台帳', exact: true });
       await expect(portfolio.getByRole('heading', { name: '開始時点を登録', exact: true })).toBeVisible();
       await expect(portfolio.getByLabel('開始日（JST）', { exact: true })).toHaveValue(portfolioDate);
@@ -524,6 +531,7 @@ try {
       // Re-authentication loads the server ledger but never revives the unsaved draft.
       await page.getByLabel('所有者キー', { exact: true }).fill(token);
       await page.getByRole('button', { name: '安全に接続する' }).click();
+      await page.locator('#assets > summary').click();
       await expect(cash('JPY')).toHaveText('11000');
       await expect(cash('USD')).toHaveText('968.00');
       await expect(portfolio.getByLabel('メモ（任意）', { exact: true })).toHaveValue('');

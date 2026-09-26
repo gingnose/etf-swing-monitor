@@ -30,28 +30,28 @@ export default function NewsPanel({api,onAuthError,onReview,refreshKey}:Props){
  const focused=matching.filter(a=>a.priority.level!=='normal'&&Date.parse(a.publishedAt)>=Date.parse(data?.checkedAt??'')-7*86400000).slice(0,5);
  const articles=expanded?matching:focused;
  return <section id="news" className="panel news-panel" aria-label="ニュースと出所" aria-busy={busy}>
-  <div className="section-heading"><h2>購入前のニュース確認</h2><button disabled={busy} onClick={()=>void load(true)}>ニュースを取得</button></div>
-  <p>価格条件を見て購入を考える際に、慎重に判断すべき材料がないか確認します。ニュースだけで購入を勧めるものではありません。</p>
-  <p role="status">{busy?(progress||'読み込み中…'):data?.assessment}</p>{error&&<p role="alert" className="news-error">{error}</p>}
+  <div className="section-heading"><h2>重要ニュース</h2><button disabled={busy} onClick={()=>void load(true)}>ニュースを取得</button></div>
+
+  <p role="status">{busy?(progress||'更新中…'):null}</p>{error&&<p role="alert" className="news-error">{error}</p>}
   {data&&<>
-   <details className="news-source-details"><summary>情報源の取得状況（3件）</summary><div className="news-sources">{data.sources.map(s=><div key={s.source}><strong>{s.name}</strong><span className={s.state==='current'?'news-ok':'news-warning'}>{stateNames[s.state]}</span><small>最終成功 {time(s.lastSuccess)} JST / 試行 {time(s.lastAttempt)} JST</small><small>{s.detail}{s.rejected>0?` 出所・日時などで未採用：${s.rejected}件。`:''}</small></div>)}</div></details>
-   <p className="news-focus">悪材料・懸念材料を優先して、直近7日の重要な記事を最大5件表示します。方向や重要度は見出しによる推定です。</p>
-   <label className="news-filter">関連候補を絞る <select value={filter} onChange={e=>setFilter(e.target.value)} aria-label="ニュースの関連銘柄"><option value="all">すべて</option><option value="SOXL">SOXL</option><option value="TQQQ">TQQQ</option></select></label>
-   {!articles.length&&<p>現在、表示範囲に優先して確認する記事はありません。悪材料がないことを保証しません。</p>}
+   {data.sources.some(s=>s.state!=='current')&&<p className="compact-warning">一部のニュースが未取得・古い状態です</p>}
+   <label className="news-filter">銘柄 <select value={filter} onChange={e=>setFilter(e.target.value)} aria-label="ニュースの関連銘柄"><option value="all">すべて</option><option value="SOXL">SOXL</option><option value="TQQQ">TQQQ</option></select></label>
+   {!articles.length&&<p>重要な記事はありません（取得範囲内）。</p>}
    <ol className="news-articles">{articles.map(a=><li key={a.id}>
-    <div className="news-labels"><span className={a.priority.concern?'news-concern':''}>{a.priority.concern?'買い増し前に確認':a.priority.level==='critical'?'特に重要':a.priority.level==='important'?'重要':'参考'}</span><span>{{positive:'好材料候補',negative:'悪材料候補',mixed:'良悪混在',unknown:'方向未判定'}[a.priority.direction]}</span><span>{a.evidence.sourceKind==='official'?'公式の発信':'報道'}</span><span>{a.evidence.targets.join(' / ')}</span>{a.evidence.reviewRequired&&<span>内容確認候補</span>}</div>
+    <div className="news-labels"><span className={a.priority.concern?'news-concern':''}>{a.priority.concern?'買い増し前に確認':a.priority.level==='critical'?'特に重要':a.priority.level==='important'?'重要':'参考'}</span><span>{{positive:'好材料候補',negative:'悪材料候補',mixed:'良悪混在',unknown:'方向未判定'}[a.priority.direction]}</span><span>{a.evidence.targets.join(' / ')}</span></div>
     <h3><a href={a.url} target="_blank" rel="noopener noreferrer">{a.title}<span aria-hidden="true"> ↗</span></a></h3>
-    <small>{SOURCE_NAMES[a.source]} · 公開 {time(a.publishedAt)} JST · 出所確認／内容未照合{a.sourceState!=='current'?' · この提供元の最新取得を確認できていません':''}</small>
-    <p className="news-topic">優先した理由：{a.priority.reason}</p>
-    <details><summary>関連の根拠・取得時刻</summary><ul>{a.evidence.reasons.map(reason=><li key={reason}>{reason}</li>)}</ul>
+    <small>{SOURCE_NAMES[a.source]} · 公開 {time(a.publishedAt)} JST{a.sourceState!=='current'?' · この提供元の最新取得を確認できていません':''}</small>
+    <details><summary>根拠・詳細</summary><p className="news-topic">優先した理由：{a.priority.reason}</p><ul>{a.evidence.reasons.map(reason=><li key={reason}>{reason}</li>)}</ul>
      <p>公開：{time(a.publishedAt)} JST<br/>配信元の更新：{time(a.updatedAt)} JST<br/>記事の初回取得：{time(a.firstSeen)} JST<br/>この版の初回取得：{time(a.revisionSeen)} JST<br/>最終取得：{time(a.lastSeen)} JST</p>
      <p>{a.priority.uncertainty} 下落の原因を特定したものではありません。{a.evidence.sourceKind==='official'?'公式発信にも発信者の見解・将来予測を含む場合があります。':''}{a.similarHeadlines?` 同日・同じ見出しの候補がほかに${a.similarHeadlines}件あります。独立した裏付けとは数えません。`:''}</p>
     </details>
    </li>)}</ol>
    {matching.length>focused.length&&<button onClick={()=>setExpanded(v=>!v)}>{expanded?'重要な記事だけに戻す':`参考記事も含めて表示（${matching.length}件）`}</button>}
-   <p className="news-footnote">{data.displayLimited?'表示は直近の記事の一部です。 ':''}RSSの先頭5件とAlpacaの直近7日・最新10件に限るため、全ニュースを網羅しません。政府の輸出規制発表、物価統計、全構成銘柄の直接取得は未対応です。</p>
+   <details className="news-method"><summary>取得状況・判定方法</summary>
+   <details className="news-source-details"><summary>情報源の取得状況（3件）</summary><div className="news-sources">{data.sources.map(s=><div key={s.source}><strong>{s.name}</strong><span className={s.state==='current'?'news-ok':'news-warning'}>{stateNames[s.state]}</span><small>最終成功 {time(s.lastSuccess)} JST / 試行 {time(s.lastAttempt)} JST</small><small>{s.detail}{s.rejected>0?` 出所・日時などで未採用：${s.rejected}件。`:''}</small></div>)}</div></details>
+   <p>{data.assessment}</p><p className="news-footnote">{data.displayLimited?'表示は直近の記事の一部です。 ':''}RSSの先頭5件とAlpacaの直近7日・最新10件に限るため、全ニュースを網羅しません。政府の輸出規制発表、物価統計、全構成銘柄の直接取得は未対応です。</p>
    <details><summary>自動取得・分析の範囲</summary><p>毎時25分にBenzinga、30分にFRB、35分にNVIDIAを取得します（JST）。Alpacaは直近20分を除外。提供元ごとに処理し、一部が失敗しても他の情報源は保持します。</p><p>重要度は見出し・タグ・発信者のルールで分類します。特に重要な悪材料・懸念材料だけを毎時評価し、自動通知は合計1日1回まで。良材料は画面表示のみです。同種の材料は72時間重複を抑制します。予想・噂・否定表現は通知しません。本文のAI分析や真偽の自動確認は未対応です。ニュースが見つからなくても、価格の割安さや購入の安全性を保証しません。</p></details>
-   <small>分類ルール：{data.priorityVersion}</small>
+   <small>分類ルール：{data.priorityVersion}</small></details>
   </>}
  </section>;
 }

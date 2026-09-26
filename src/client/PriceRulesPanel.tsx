@@ -31,10 +31,10 @@ export default function PriceRulesPanel({api,onAuthError,dataKey,newsReview,onRe
     } finally {if(alive.current&&id===sequence.current) setBusy(false);}
   }
   useEffect(()=>{alive.current=true;setData(null);void load();return()=>{alive.current=false;sequence.current++;};},[dataKey]);
-  return <section className="panel price-rules-panel" aria-label="価格ルールの検証" aria-busy={busy}>
-    <div className="section-heading"><h2>購入候補の指標</h2><button disabled={busy} onClick={()=>{onRefreshNews();void load();}}>条件を更新</button></div>
-    <p>20日高値更新と長期の安さを表示します。購入額はご自身で決めてください。価格・良材料・反対材料・出口方針を分けて確認できます。</p>
-    <p role="status">{busy?'読み込み中…':data?.detail}</p>{error&&<p role="alert">{error}</p>}
+  return <section id="watchlist" className="panel price-rules-panel" aria-label="価格ルールの検証" aria-busy={busy}>
+    <div className="section-heading"><h2>ウォッチリスト</h2><button disabled={busy} onClick={()=>{onRefreshNews();void load();}}>条件を更新</button></div>
+    <p>確定終値で判定 · 検証中 · 売買通知は未有効</p>
+    <p role="status">{busy?'更新中…':data?.state!=='available'?data?.detail:null}</p>{error&&<p role="alert">{error}</p>}
     {data?.state==='available'&&<EntryStrategiesPanel strategies={data.strategies??[]} reviews={newsReview}/>}
     <details><summary>旧モデルの観測・検証記録</summary>
     {data?.state==='available'&&<div className="price-rule-cards">{data.decisions.map(d=><article key={d.symbol}>

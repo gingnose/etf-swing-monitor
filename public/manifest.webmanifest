@@ -1,14 +1,14 @@
 {
   "id": "/",
-  "name": "ETF Monitor · 接続を確かめる",
+  "name": "ETF Monitor",
   "short_name": "ETF Monitor",
-  "description": "マーケットデータと通知の技術検証ダッシュボード",
+  "description": "SOXL・TQQQの価格指標と重要ニュース",
   "lang": "ja",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#101e30",
-  "theme_color": "#101e30",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
   "icons": [
     {
       "src": "/icon.svg",

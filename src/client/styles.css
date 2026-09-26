@@ -6,11 +6,11 @@
     "Segoe UI",
     "Noto Sans JP",
     sans-serif;
-  color: #e7edf4;
-  background: #101e30;
+  color: #475569;
+  background: #ffffff;
   font-synthesis: none;
   font-weight: 400;
-  color-scheme: dark;
+  color-scheme: light;
   line-height: 1.65;
   font-size: 14px;
 }
@@ -39,7 +39,7 @@ button:disabled {
 button:focus-visible,
 a:focus-visible,
 input:focus-visible {
-  outline: 3px solid #8aead8;
+  outline: 3px solid #0f766e;
   outline-offset: 4px;
 }
 button {
@@ -61,7 +61,7 @@ a {
   justify-content: space-between;
   align-items: center;
   min-height: 96px;
-  border-bottom: 1px solid #2b394a;
+  border-bottom: 1px solid #e2e8f0;
 }
 .brand {
   display: flex;
@@ -72,21 +72,21 @@ a {
 }
 .brand b {
   font-weight: 400;
-  color: #b5c3d3;
+  color: #475569;
 }
 .environment {
   display: flex;
   align-items: center;
   gap: 8px;
   font-size: 12px;
-  color: #bbd9d5;
+  color: #475569;
 }
 i {
   display: inline-block;
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #71dbcb;
+  background: #ffffff;
 }
 .intro {
   padding: 49px 0 28px;
@@ -96,7 +96,7 @@ i {
   font-size: 10px;
   font-weight: 650;
   letter-spacing: 0.18em;
-  color: #79d8c9;
+  color: #475569;
 }
 .intro h1 {
   font-size: clamp(30px, 5vw, 43px);
@@ -105,10 +105,10 @@ i {
   margin: 14px 0;
 }
 .intro h1 span {
-  color: #73d8c9;
+  color: #475569;
 }
 .intro > p:not(.eyebrow) {
-  color: #b3c1d1;
+  color: #475569;
   line-height: 1.9;
   margin: 0;
   font-size: 15px;
@@ -120,16 +120,16 @@ i {
   display: flex;
   align-items: baseline;
   gap: 9px;
-  color: #afc3d1;
+  color: #475569;
   font-size: 12px;
   margin-top: 25px;
   padding: 12px 15px;
-  border: 1px solid #2d4553;
+  border: 1px solid #e2e8f0;
   border-radius: 9px;
-  background: #152937;
+  background: #ffffff;
 }
 .scope > span {
-  color: #80ded0;
+  color: #475569;
 }
 .section-heading {
   display: flex;
@@ -143,11 +143,11 @@ i {
 }
 .section-heading > span {
   font-size: 11px;
-  color: #a6b7ca;
+  color: #475569;
 }
 .panel {
-  background: #192a3e;
-  border: 1px solid #304055;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
   border-radius: 16px;
   padding: 24px;
 }
@@ -174,29 +174,29 @@ i {
 .badge {
   display: inline-flex;
   align-items: center;
-  border: 1px solid #46566a;
-  background: #223247;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
   border-radius: 5px;
   padding: 3px 8px;
   font-size: 11px;
-  color: #c1ccda;
+  color: #475569;
   flex-shrink: 0;
   max-width: 100%;
   overflow-wrap: anywhere;
 }
 .badge.good {
-  color: #9ae8d7;
-  background: #183d40;
-  border-color: #315c5b;
+  color: #475569;
+  background: #ffffff;
+  border-color: #e2e8f0;
 }
 .metric-label {
   font-size: 11px;
-  color: #b0c0d1;
+  color: #475569;
   margin: 24px 0 3px;
 }
 .metric-label span {
   margin-left: 5px;
-  color: #b9c9da;
+  color: #475569;
 }
 .price {
   font-size: 39px;
@@ -212,19 +212,19 @@ i {
   gap: 8px;
   margin-top: 18px;
   font-size: 12px;
-  color: #b5c4d4;
+  color: #475569;
 }
 .market-meta b {
   font-weight: 500;
-  color: #dae3ee;
+  color: #475569;
 }
 .data-source {
   display: flex;
   flex-direction: column;
   gap: 2px;
   font-size: 10px;
-  color: #a7b9cb;
-  border-top: 1px solid #324256;
+  color: #475569;
+  border-top: 1px solid #e2e8f0;
   margin-top: 15px;
   padding-top: 12px;
   min-height: 48px;
@@ -238,14 +238,14 @@ i {
   display: flex;
   align-items: center;
   gap: 11px;
-  color: #79d8c9;
+  color: #475569;
   font-weight: 600;
   font-size: 17px;
 }
 .step span {
   font-size: 9px;
   letter-spacing: 0.15em;
-  color: #b0c2d2;
+  color: #475569;
 }
 .check h2 {
   font-size: 19px;
@@ -253,7 +253,7 @@ i {
 }
 .check > p:not(.fine) {
   font-size: 12px;
-  color: #b6c5d5;
+  color: #475569;
   margin: 0 0 20px;
 }
 .config-row {
@@ -262,13 +262,13 @@ i {
   align-items: center;
   gap: 10px;
   min-height: 47px;
-  border-top: 1px solid #314157;
+  border-top: 1px solid #e2e8f0;
   font-size: 12px;
 }
 .check .hint {
   font-size: 11px !important;
   line-height: 1.85;
-  background: #142336;
+  background: #ffffff;
   border-radius: 8px;
   padding: 12px;
   margin: 10px 0 17px !important;
@@ -280,16 +280,16 @@ i {
   gap: 12px;
   min-height: 48px;
   width: 100%;
-  border: 1px solid #7bdacc;
+  border: 1px solid #e2e8f0;
   border-radius: 8px;
-  background: #8ae3d2;
-  color: #102c32;
+  background: #ffffff;
+  color: #475569;
   font-size: 13px;
   font-weight: 650;
   padding: 12px 16px;
 }
 .primary:hover:not(:disabled) {
-  background: #b0f2e5;
+  background: #ffffff;
 }
 .check > .primary {
   margin-top: auto;
@@ -299,27 +299,27 @@ i {
   padding: 9px 4px;
   background: transparent;
   border: 0;
-  color: #a9dbd5;
+  color: #475569;
   font-size: 12px;
   text-decoration: underline;
   text-underline-offset: 4px;
 }
 .text-button:hover:not(:disabled) {
-  color: #e1fff9;
+  color: #475569;
 }
 .fine {
   font-size: 11px;
-  color: #a9bbcf;
+  color: #475569;
   line-height: 1.85;
 }
 .schedule {
-  border-top: 1px solid #314157;
+  border-top: 1px solid #e2e8f0;
   padding-top: 15px;
   margin: 12px 0 0;
 }
 .schedule b {
   font-weight: 500;
-  color: #d9e4f0;
+  color: #475569;
   margin-left: 7px;
 }
 .history {
@@ -332,12 +332,12 @@ i {
 }
 .empty {
   font-size: 13px;
-  color: #c5d0df;
+  color: #475569;
   margin: 18px 0 6px;
 }
 .empty span {
   font-size: 12px;
-  color: #a9bbce;
+  color: #475569;
 }
 .run-meta {
   display: flex;
@@ -348,13 +348,13 @@ i {
 }
 .run-meta time {
   font-size: 11px;
-  color: #a9bbcf;
+  color: #475569;
 }
 .run-detail {
   font-size: 13px;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-  color: #d0dce8;
+  color: #475569;
 }
 .session {
   display: flex;
@@ -362,7 +362,7 @@ i {
   align-items: center;
   margin: 12px 3px 24px;
   font-size: 11px;
-  color: #adc0cf;
+  color: #475569;
 }
 .session i {
   margin-right: 8px;
@@ -371,9 +371,9 @@ footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-top: 1px solid #2b394a;
+  border-top: 1px solid #e2e8f0;
   padding: 23px 0 max(30px, env(safe-area-inset-bottom));
-  color: #a1b4c8;
+  color: #475569;
   font-size: 10px;
 }
 footer > span {
@@ -397,14 +397,14 @@ footer p {
   margin: 0 0 18px;
 }
 .error {
-  background: #352d37;
-  border-color: #85606b;
-  color: #ffccd1;
+  background: #ffffff;
+  border-color: #e2e8f0;
+  color: #475569;
 }
 .success {
-  background: #173c3b;
-  border-color: #3d7267;
-  color: #baf1df;
+  background: #ffffff;
+  border-color: #e2e8f0;
+  color: #475569;
 }
 .login {
   max-width: 540px;
@@ -415,7 +415,7 @@ footer p {
   margin: 10px 0;
 }
 .login p {
-  color: #b6c5d5;
+  color: #475569;
   font-size: 13px;
 }
 .login form {
@@ -429,11 +429,11 @@ footer p {
 }
 .login input {
   min-height: 50px;
-  border: 1px solid #587087;
-  background: #101e30;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
   border-radius: 8px;
   padding: 12px;
-  color: #f0f5fa;
+  color: #475569;
   width: 100%;
 }
 .login .fine {
@@ -441,7 +441,7 @@ footer p {
 }
 .placeholder {
   margin: 10px 0 40px;
-  color: #b6c5d5;
+  color: #475569;
 }
 @media (max-width: 640px) {
   .shell {
@@ -548,7 +548,7 @@ footer p {
 
 .schedule-box {
   margin-top: 20px;
-  border-top: 1px solid #314157;
+  border-top: 1px solid #e2e8f0;
   padding-top: 16px;
 }
 .schedule-box h3 {
@@ -557,7 +557,7 @@ footer p {
 }
 .schedule-box p {
   font-size: 12px;
-  color: #b6c5d5;
+  color: #475569;
   line-height: 1.85;
 }
 .schedule-box .fine {
@@ -566,16 +566,16 @@ footer p {
 .secondary {
   width: 100%;
   min-height: 48px;
-  border: 1px solid #6bbaaf;
+  border: 1px solid #e2e8f0;
   border-radius: 8px;
-  background: #1b3d43;
-  color: #b5eee2;
+  background: #ffffff;
+  color: #475569;
   padding: 12px;
   font-weight: 600;
   font-size: 13px;
 }
 .secondary:hover:not(:disabled) {
-  background: #285159;
+  background: #ffffff;
 }
 
 .checks-grid {
@@ -590,8 +590,8 @@ footer p {
   position: fixed;
   left: 12px;
   top: -100px;
-  background: #8ae3d2;
-  color: #102c32;
+  background: #ffffff;
+  color: #475569;
   padding: 12px 16px;
   z-index: 10;
   border-radius: 8px;

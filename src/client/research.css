@@ -20,7 +20,7 @@
 .research-note,
 .research-status {
   font-size: 12px;
-  color: #b5c4d4;
+  color: #475569;
   overflow-wrap: anywhere;
 }
 .research-note {
@@ -31,12 +31,12 @@
 }
 .research-chart {
   margin: 18px 0;
-  color: #79d8c9;
+  color: #475569;
 }
 .research-chart figcaption,
 .research-chart-dates {
   font-size: 11px;
-  color: #b5c4d4;
+  color: #475569;
 }
 .research-chart svg {
   display: block;
@@ -59,17 +59,17 @@
   align-items: baseline;
   gap: 12px;
   padding: 10px 0;
-  border-top: 1px solid #314157;
+  border-top: 1px solid #e2e8f0;
 }
 .research-metrics dt {
   font-size: 12px;
-  color: #b5c4d4;
+  color: #475569;
 }
 .research-metrics dd {
   margin: 0;
   text-align: right;
   font-size: 16px;
-  color: #e7edf4;
+  color: #475569;
 }
 .research-explanation {
   line-height: 1.85;
