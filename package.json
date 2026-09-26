@@ -19,7 +19,8 @@
     "secrets:upload": "node scripts/upload-secrets.mjs",
     "test:browser": "npm run build && node scripts/integration.mjs --browser",
     "probe:market": "node --experimental-strip-types scripts/probe-market.mjs",
-    "study:prices": "node --experimental-strip-types scripts/study-price-rules.mjs"
+    "study:prices": "node --experimental-strip-types scripts/study-price-rules.mjs",
+    "study:calibration": "node --experimental-strip-types scripts/study-price-calibration.mjs"
   },
   "dependencies": {
     "@block65/webcrypto-web-push": "2.0.0",

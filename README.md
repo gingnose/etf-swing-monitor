@@ -29,7 +29,7 @@ npm run test:browser
 
 `check` は型・単体・ビルド・Worker/D1統合テスト。ブラウザテストはローカルChromeまたはPlaywright Chromiumを使用します（未インストール時は `npx playwright install chromium`）。実データ取得・端末への到着を代用するテストではありません。
 
-[接続の実証状況](docs/P1_STATUS.md) / [価格履歴と指標の仕様](docs/DATA_PHASE.md) / [資金・保有台帳の仕様](docs/PORTFOLIO.md) / [価格ルールの検証](docs/PRICE_RULES.md) / [ニュースの取得・出所確認](docs/NEWS.md) / [優先表示・補助確認と通知](docs/NEWS_PRIORITY.md)
+[接続の実証状況](docs/P1_STATUS.md) / [価格履歴と指標の仕様](docs/DATA_PHASE.md) / [資金・保有台帳の仕様](docs/PORTFOLIO.md) / [価格ルールの検証](docs/PRICE_RULES.md) / [銘柄別の乖離指標比較](docs/PRICE_CALIBRATION.md) / [ニュースの取得・出所確認](docs/NEWS.md) / [優先表示・補助確認と通知](docs/NEWS_PRIORITY.md)
 
 ## プロジェクト全体で予定する機能
 
