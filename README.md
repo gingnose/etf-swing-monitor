@@ -2,7 +2,7 @@
 
 SOXLを主対象、TQQQを副対象に、価格とニュースを監視するAndroid向け個人用PWAのプロジェクトです。
 
-**価格履歴・参考指標・通知の検証版を実装しました。売買判断・ニュース分析・資金管理は未実装です。**
+**価格履歴・参考指標・通知・資産台帳を実装しました。売買判断・ニュース分析は未実装です。**
 
 所有者ログイン、SOXL/TQQQの日足取得、Android向けPWA、即時・予約プッシュ通知の実装があります。ローカルテストと実際のAlpaca/Cloudflare/Androidでの実証は区別しています。Alpaca・Cloudflare接続とAndroidへの予約通知到着を確認済みです。約400暦日の履歴と参考指標を表示できます。
 
@@ -29,7 +29,7 @@ npm run test:browser
 
 `check` は型・単体・ビルド・Worker/D1統合テスト。ブラウザテストはローカルChromeまたはPlaywright Chromiumを使用します（未インストール時は `npx playwright install chromium`）。実データ取得・端末への到着を代用するテストではありません。
 
-[接続の実証状況](docs/P1_STATUS.md) / [価格履歴と指標の仕様](docs/DATA_PHASE.md)
+[接続の実証状況](docs/P1_STATUS.md) / [価格履歴と指標の仕様](docs/DATA_PHASE.md) / [資金・保有台帳の仕様](docs/PORTFOLIO.md)
 
 ## プロジェクト全体で予定する機能
 

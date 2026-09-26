@@ -112,3 +112,9 @@ npm run test:browser
 - [Alpacaの履歴API](https://docs.alpaca.markets/us/reference/stockbars)
 - [Cloudflare Workersの制限](https://developers.cloudflare.com/workers/platform/limits/)
 - [Cloudflare Cron](https://developers.cloudflare.com/workers/configuration/cron-triggers/)
+
+## 資産台帳の初回入力
+
+アプリを更新し、所有者ログイン後の「資産台帳」から開始日、円・ドル現金、既存保有の数量と取得総額を入力します。これらはチャットやGitHubには記載せず、アプリ内だけで保存してください。毎月の入金予定は任意で、実入金を記録するまでは残高に加算しません。
+
+既存デプロイへの追加は `npm run deploy` で `0007_portfolio.sql` を適用します。既存の価格履歴、所有者セッション、通知設定は保持します。本番の台帳をテスト値で初期化しないでください。計算・訂正・JSON書き出しの制約は [PORTFOLIO.md](PORTFOLIO.md) を参照してください。

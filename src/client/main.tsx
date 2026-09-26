@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./styles.css";
+import PortfolioPanel from "./PortfolioPanel";
 import ResearchPanel, { type ResearchPayload } from "./ResearchPanel";
 
 type Status = {
@@ -448,6 +449,7 @@ function App() {
                   );
                 })}
               </div>
+              <PortfolioPanel api={api} onAuthError={fail} />
               <ResearchPanel research={status.research ?? null} />
               <p className="fine">価格の定期更新：{status.scheduledChecksEnabled ? "有効（毎日9:15・15:15・21:15 JSTごろ）" : "停止中（手動で更新できます）"}</p>
               <div className="checks-grid">

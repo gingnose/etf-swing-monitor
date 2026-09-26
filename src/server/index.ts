@@ -1,5 +1,6 @@
 import { AppError, type Env } from './types.ts';
 import { login, limit, readJson, requireOwner, requireSameOrigin, sessionCookie } from './auth.ts';
+import { readPortfolio, writePortfolio } from './portfolio.ts';
 import { readResearch, refreshCalendar } from './history.ts';
 import { collectStart, collectContinue, collectPublish } from './collection.ts';
 import { jstDay, processNotificationJobs, pushConfigured, sendTestPush, validateSubscription, verifySubscriptionKey } from './push.ts';
@@ -22,6 +23,8 @@ async function api(request: Request, env: Env) {
     await env.DB.prepare('DELETE FROM sessions WHERE token_hash=?').bind(sessionHash).run();
     return json({ ok: true }, 200, { 'Set-Cookie': sessionCookie(request, '', 0) });
   }
+  if (path === '/api/portfolio' && method === 'GET') return json(await readPortfolio(env));
+  if (path === '/api/portfolio' && method === 'POST') return json(await writePortfolio(env, await readJson(request)));
   if (path === '/api/research' && method === 'GET') return json(await readResearch(env));
   if (path === '/api/status' && method === 'GET') {
     const latestRun = await env.DB.prepare('SELECT status,created_at AS createdAt,detail FROM runs ORDER BY created_at DESC LIMIT 1')
