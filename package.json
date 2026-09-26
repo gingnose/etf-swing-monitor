@@ -17,7 +17,8 @@
     "deploy:prepare": "node scripts/prepare-deploy.mjs",
     "deploy": "node scripts/deploy.mjs",
     "secrets:upload": "node scripts/upload-secrets.mjs",
-    "test:browser": "npm run build && node scripts/integration.mjs --browser"
+    "test:browser": "npm run build && node scripts/integration.mjs --browser",
+    "probe:market": "node --experimental-strip-types scripts/probe-market.mjs"
   },
   "dependencies": {
     "@block65/webcrypto-web-push": "2.0.0",
