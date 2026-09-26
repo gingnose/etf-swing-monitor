@@ -34,12 +34,16 @@ export function pushConfigured(env: Env) {
 }
 
 export async function sendTestPush(env: Env, tag: string) {
+  return sendNotificationPush(env,tag,{title:'ETF Swing Monitor',body:'通知テストです。売買の提案ではありません。',url:'/'});
+}
+
+export async function sendNotificationPush(env: Env, tag: string, content:{title:string;body:string;url:string}) {
   if (!pushConfigured(env)) throw new AppError(503, '通知用の鍵が未設定です。');
   const row = await env.DB.prepare('SELECT endpoint,p256dh,auth FROM push_subscription WHERE id=1').first<{ endpoint: string; p256dh: string; auth: string }>();
   if (!row) throw new AppError(409, '先にこの端末の通知を有効にしてください。');
   const sub = validateSubscription({ endpoint: row.endpoint, keys: { p256dh: row.p256dh, auth: row.auth } });
   try {
-    const payload = await buildPushPayload({ data: JSON.stringify({ title: 'ETF Swing Monitor', body: '通知テストです。売買の提案ではありません。', url: '/', tag }), options: { ttl: 600 } }, sub, {
+    const payload = await buildPushPayload({ data: JSON.stringify({ ...content, tag }), options: { ttl: 600 } }, sub, {
       publicKey: env.VAPID_PUBLIC_KEY!, privateKey: env.VAPID_PRIVATE_KEY!, subject: env.VAPID_SUBJECT!,
     });
     const response = await fetch(sub.endpoint, { ...payload, redirect: 'manual', signal: AbortSignal.timeout(10_000) });

@@ -1,13 +1,14 @@
+import type {NewsReview} from '../domain/news-review';
 import {useEffect,useRef,useState} from 'react';
 import type {PriceDecision} from '../domain/price-rules';
 import './price-rules.css';
 type Evaluation={version:string;rows:{symbol:string;period:string;through:string;rule:"baseline"|"pullback"|"recovery";completed:number;meanPct:number|null;medianPct:number|null;worstReturnPct:number|null}[]};
 type Payload={evaluation:Evaluation|null;version:string;state:string;detail:string;decisions:PriceDecision[];observations:{marketDate:string;observedAt:string;inputHash:string;decisions:PriceDecision[]}[]};
-type Props={api:<T>(path:string,method?:string,body?:unknown)=>Promise<T>;onAuthError:(e:unknown)=>void;dataKey:string};
+type Props={onRefreshNews:()=>void;newsReview:NewsReview[]|null;api:<T>(path:string,method?:string,body?:unknown)=>Promise<T>;onAuthError:(e:unknown)=>void;dataKey:string};
 const labels={insufficient:'履歴不足',pause:'価格条件では買い増し見送り',waiting:'条件待ち',matched:'価格条件に一致（検証中）'};
 const names={pullback:'上昇傾向での押し目',recovery:'20日平均の上抜け確認'};
 const n=(value:number)=>value.toFixed(2);
-export default function PriceRulesPanel({api,onAuthError,dataKey}:Props) {
+export default function PriceRulesPanel({api,onAuthError,dataKey,newsReview,onRefreshNews}:Props) {
   const [data,setData]=useState<Payload|null>(null),[busy,setBusy]=useState(false),[error,setError]=useState('');
   const service=useRef({api,onAuthError});service.current={api,onAuthError};
   const sequence=useRef(0),alive=useRef(false);
@@ -26,8 +27,8 @@ export default function PriceRulesPanel({api,onAuthError,dataKey}:Props) {
   }
   useEffect(()=>{alive.current=true;setData(null);void load();return()=>{alive.current=false;sequence.current++;};},[dataKey]);
   return <section className="panel price-rules-panel" aria-label="価格ルールの検証" aria-busy={busy}>
-    <div className="section-heading"><h2>価格ルールの検証</h2><button disabled={busy} onClick={()=>void load()}>条件を更新</button></div>
-    <p>2つの価格仮説を観測しています。購入額はご自身で決めてください。ニュース・予算を含む買い時判定と自動通知は、まだ有効にしていません。</p>
+    <div className="section-heading"><h2>価格ルールの検証</h2><button disabled={busy} onClick={()=>{onRefreshNews();void load();}}>条件を更新</button></div>
+    <p>2つの価格仮説を観測しています。購入額はご自身で決めてください。価格条件を主に、反対材料の確認結果を併記します。総合的な買い目・売り目の判定と通知はまだ有効にしていません。</p>
     <p role="status">{busy?'読み込み中…':data?.detail}</p>{error&&<p role="alert">{error}</p>}
     {data?.state==='available'&&<div className="price-rule-cards">{data.decisions.map(d=><article key={d.symbol}>
       <h3>{d.symbol}</h3><span className={`rule-state rule-${d.state}`}>{labels[d.state]}</span>
@@ -37,6 +38,7 @@ export default function PriceRulesPanel({api,onAuthError,dataKey}:Props) {
         <dl><div><dt>終値 / 20日平均</dt><dd>{n(d.values.close)} / {n(d.values.sma20)} USD</dd></div>
         <div><dt>50日 / 200日平均</dt><dd>{n(d.values.sma50)} / {n(d.values.sma200)} USD</dd></div>
         <div><dt>RSI14</dt><dd>{n(d.values.rsi14)}</dd></div></dl></>:<p>205営業日分の確定終値が必要です。</p>}
+      <NewsCrossCheck review={newsReview?.find(r=>r.symbol===d.symbol)??null}/>
     </article>)}</div>}
     {data?.evaluation&&<details open><summary>過去検証：20営業日後の値動き</summary>
       <p>2019〜2023年を前期、2024年以降を後期として比較。検証終点：{data.evaluation.rows.find(r=>r.period==='後期')?.through ?? '—'}。条件が出た翌営業日の終値から測定し、仮の往復コスト0.5%を差し引いています。</p>
@@ -53,6 +55,16 @@ export default function PriceRulesPanel({api,onAuthError,dataKey}:Props) {
     </details>
     <button disabled={busy||data?.state!=='available'||data.decisions.some(d=>d.state==='insufficient')} onClick={()=>void load(true)}>現在の条件を観測に保存</button>
     {data&&<><h3>今後の検証用に保存した観測</h3>{!data.observations.length?<p>観測はまだありません。過去検証の結果とは別に記録します。</p>:<ol className="rule-history">{data.observations.map(o=><li key={o.marketDate}><strong>{o.marketDate}</strong><span>{o.decisions.map(d=>`${d.symbol}：${labels[d.state]}`).join(' / ')}</span><small>初回観測：{new Date(o.observedAt).toLocaleString('ja-JP',{timeZone:'Asia/Tokyo'})} JST</small></li>)}</ol>}
-      <small>ルール版：{data.version} · ニュース未評価 · 購入額の自動計算なし</small></>}
+      <small>ルール版：{data.version} · ニュースは見出しの補助確認 · 購入額の自動計算なし</small></>}
   </section>;
+}
+
+function NewsCrossCheck({review}:{review:NewsReview|null}){
+ const label=!review?'ニュース確認不足':review.state==='concerns'?`懸念材料あり（${review.count}件）`:review.state==='insufficient'?'ニュース確認不足':'取得した見出しの範囲では懸念材料を検出せず';
+ return <div className="news-cross-check"><h4>購入判断に反する材料の確認</h4><strong>{label}</strong>
+ {review?.reasons.map(r=><p key={r.url}><a href={r.url} target="_blank" rel="noopener noreferrer">{r.title}</a><br/><small>{r.reason}</small></p>)}
+ {review?.incomplete&&<p>一部の情報源が未取得・古い・取得失敗です。</p>}
+ <p>直近7日の取得見出しを確認しています。本文や下落原因は未確認です。「検出せず」は悪材料なし・購入可を意味しません。</p>
+ {review&&<small>確認：{new Date(review.checkedAt).toLocaleString('ja-JP',{timeZone:'Asia/Tokyo'})} JST</small>}
+ <p><a href="#news">ニュースの根拠・取得範囲を見る</a></p></div>;
 }

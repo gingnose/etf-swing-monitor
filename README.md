@@ -2,7 +2,7 @@
 
 SOXLを主対象、TQQQを副対象に、価格とニュースを監視するAndroid向け個人用PWAのプロジェクトです。
 
-**価格履歴・参考指標・通知・資産台帳を実装しました。価格条件の仮説と過去検証も追加しました。ニュースの取得・出所表示・見出し分類も追加しました。実用の売買判断、本文のAI分析、真偽の自動判定は未実装です。**
+**価格履歴・参考指標・通知・資産台帳を実装しました。価格条件の仮説と過去検証も追加しました。ニュースの重要度順表示、価格条件への懸念材料の併記、重大な悪材料・懸念材料の通知を追加しました。実用の売買判断、本文のAI分析、真偽の自動判定は未実装です。**
 
 所有者ログイン、SOXL/TQQQの日足取得、Android向けPWA、即時・予約プッシュ通知の実装があります。ローカルテストと実際のAlpaca/Cloudflare/Androidでの実証は区別しています。Alpaca・Cloudflare接続とAndroidへの予約通知到着を確認済みです。約400暦日の履歴と参考指標を表示できます。
 
@@ -29,7 +29,7 @@ npm run test:browser
 
 `check` は型・単体・ビルド・Worker/D1統合テスト。ブラウザテストはローカルChromeまたはPlaywright Chromiumを使用します（未インストール時は `npx playwright install chromium`）。実データ取得・端末への到着を代用するテストではありません。
 
-[接続の実証状況](docs/P1_STATUS.md) / [価格履歴と指標の仕様](docs/DATA_PHASE.md) / [資金・保有台帳の仕様](docs/PORTFOLIO.md) / [価格ルールの検証](docs/PRICE_RULES.md) / [ニュースの取得・出所確認](docs/NEWS.md)
+[接続の実証状況](docs/P1_STATUS.md) / [価格履歴と指標の仕様](docs/DATA_PHASE.md) / [資金・保有台帳の仕様](docs/PORTFOLIO.md) / [価格ルールの検証](docs/PRICE_RULES.md) / [ニュースの取得・出所確認](docs/NEWS.md) / [優先表示・補助確認と通知](docs/NEWS_PRIORITY.md)
 
 ## プロジェクト全体で予定する機能
 

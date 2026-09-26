@@ -1,3 +1,4 @@
+import {queueNewsAlert,processNewsAlerts} from './news-alerts.ts';
 import { AppError, type Env } from './types.ts';
 import { login, limit, readJson, requireOwner, requireSameOrigin, sessionCookie } from './auth.ts';
 import { readNews, refreshNews } from './news.ts';
@@ -81,6 +82,7 @@ async function api(request: Request, env: Env) {
   }
   if (path === '/api/push/subscribe' && method === 'DELETE') {
     await env.DB.batch([env.DB.prepare('DELETE FROM push_subscription'),
+      env.DB.prepare("UPDATE news_alerts SET status='skipped',detail='通知登録を解除しました。' WHERE status='pending'"),
       env.DB.prepare("UPDATE notification_jobs SET status='skipped',detail='通知登録を解除しました。' WHERE status='pending'")]);
     return json({ ok: true, detail: '通知登録を解除しました。' });
   }
@@ -109,7 +111,8 @@ export async function scheduledRun(env: Env, now = new Date()) {
   if (!env.OWNER_TOKEN_HASH) return;
   // Keep push encryption and market acquisition in separate CPU budgets.
   if (await processNotificationJobs(env, now)) return;
-  if (env.ENABLE_SCHEDULED_CHECKS === 'true' && now.getUTCMinutes() < 40 && ([0, 6, 12].includes(now.getUTCHours()) || now.getUTCMinutes() >= 25)) {
+  if (env.ENABLE_SCHEDULED_CHECKS === 'true' && now.getUTCMinutes() === 45) { await processNewsAlerts(env,now); return; }
+  if (env.ENABLE_SCHEDULED_CHECKS === 'true' && now.getUTCMinutes() < 45 && ([0, 6, 12].includes(now.getUTCHours()) || now.getUTCMinutes() >= 25)) {
     const stage = Math.floor(now.getUTCMinutes()/5);
     const hour = now.toISOString().slice(0,13);
     const slot = hour + ':' + stage;
@@ -122,6 +125,8 @@ export async function scheduledRun(env: Env, now = new Date()) {
           await env.DB.prepare('UPDATE scheduled_checks SET job_id=? WHERE slot=?').bind(result.jobId,slot).run();
         } else if (stage === 4) {
           await observePriceRules(env,now);
+        } else if (stage === 8) {
+          await queueNewsAlert(env,now);
         } else if (stage >= 5) {
           await refreshNews(env,NEWS_SOURCES[stage-5],now);
         } else {
@@ -140,6 +145,7 @@ export async function scheduledRun(env: Env, now = new Date()) {
     const historyCutoff = new Date(now.getTime() - 365 * 86400_000).toISOString();
     const cutoff = new Date(now.getTime() - 30 * 86400_000).toISOString();
     await env.DB.batch([
+      env.DB.prepare('DELETE FROM news_alerts WHERE created_at < ?').bind(new Date(now.getTime()-90*86400_000).toISOString()),
       env.DB.prepare('DELETE FROM news_items WHERE last_seen < ?').bind(new Date(now.getTime()-90*86400_000).toISOString()),
       env.DB.prepare('DELETE FROM news_revisions WHERE observed_at < ?').bind(new Date(now.getTime()-90*86400_000).toISOString()),
       env.DB.prepare('DELETE FROM price_rule_observations WHERE observed_at < ?').bind(historyCutoff),

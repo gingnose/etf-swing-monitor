@@ -143,3 +143,7 @@ GitHubはソースコード、架空サンプル、ドキュメント、テス�
 - Android定期処理: https://developer.android.com/develop/background-work/background-tasks/persistent/getting-started/define-work
 
 月額0円での実現性と戦略の有効性は別々に判定する。実装順はP0〜P6を基本とし、P1から実時間データを蓄積する。
+
+## ニュース補助確認フェーズ
+
+優先度順の5件表示、価格条件カードへの反対材料の併記、重大な懸念材料のみの通知を追加。価格＋ニュースによる購入候補の判断精度と、買い目・売り目の自動通知は引き続き検証・実装が必要。[仕様](NEWS_PRIORITY.md)。

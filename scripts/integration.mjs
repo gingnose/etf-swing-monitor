@@ -153,6 +153,13 @@ try {
   const newsPayload=JSON.stringify(newsEvidence).replaceAll("'","''");
   cli(['d1','execute','DB','--local','--command',`INSERT INTO news_items VALUES ('news-fixture','alpaca','https://www.benzinga.com/news/fixture','Fixture: company denies outlook rumor','${newsTime}',NULL,'${newsTime}','${newsTime}','${newsTime}','fixture-hash','fixture headline','${newsPayload}'); INSERT INTO news_revisions VALUES ('news-fixture','fixture-hash','${newsTime}','Fixture: company denies outlook rumor','${newsTime}',NULL,'${newsPayload}','["NVDA"]');`]);
   const sampleNews=await(await getNews()).json();assert.equal(sampleNews.articles.length,1);assert.equal(sampleNews.articles[0].evidence.direction,'unknown');assert.equal(sampleNews.articles[0].sourceState,'failed');assert.equal(sampleNews.articles[0].revisionSeen,newsTime);
+  let extraNewsSQL='';
+  for(let i=0;i<8;i++){
+    const title=i<6?`Nvidia cuts quarterly guidance ${i}`:`Nvidia introduces game ${i}`;
+    extraNewsSQL+=`INSERT INTO news_items VALUES ('priority-${i}','alpaca','https://www.benzinga.com/news/priority-${i}','${title}','${newsTime}',NULL,'${newsTime}','${newsTime}','${newsTime}','priority-hash-${i}','priority-${i}','${newsPayload}'); INSERT INTO news_revisions VALUES ('priority-${i}','priority-hash-${i}','${newsTime}','${title}','${newsTime}',NULL,'${newsPayload}','["NVDA"]');`;
+  }
+  cli(['d1','execute','DB','--local','--command',extraNewsSQL]);
+
   // Price hypotheses use the same authenticated, fresh history, and immutable observations.
   assert.equal((await fetch(base + '/api/price-rules')).status, 401);
   const ruleGet = () => fetch(base + '/api/price-rules', { headers: { Cookie: researchCookie } });
@@ -286,9 +293,15 @@ try {
       assert.ok(await page.getByText('TQQQ', { exact: true }).first().isVisible());
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true);
       const newsPanel=page.getByRole('region',{name:'ニュースと出所',exact:true});
+      await expect(newsPanel.locator('.news-articles > li')).toHaveCount(5);
+      await expect(newsPanel.locator('.news-articles > li').first()).toContainText('買い増し前に確認');
+      await newsPanel.getByRole('button',{name:'参考記事も含めて表示（9件）'}).click();
+      await expect(newsPanel.locator('.news-articles > li')).toHaveCount(9);
       await expect(newsPanel.getByRole('link',{name:'Fixture: company denies outlook rumor'})).toBeVisible();
+      await newsPanel.getByText('情報源の取得状況（3件）',{exact:true}).click();
       await expect(newsPanel.getByText('取得失敗',{exact:true})).toBeVisible();
-      await expect(newsPanel.getByText(/真偽・独立した裏付け・株価の方向は未判定/)).toBeVisible();
+      await expect(newsPanel.getByText(/悪材料がない証拠ではなく/)).toBeVisible();
+      await expect(newsPanel.getByText(/優先した理由：/).first()).toBeVisible();
       const articleLink=newsPanel.getByRole('link',{name:'Fixture: company denies outlook rumor'});
       await expect(articleLink).toHaveAttribute('rel','noopener noreferrer');
       await newsPanel.getByLabel('ニュースの関連銘柄').selectOption('SOXL');

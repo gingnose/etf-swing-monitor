@@ -1,3 +1,5 @@
+import {summarizeNewsReview} from '../domain/news-review.ts';
+import {prioritizeNews,PRIORITY_VERSION} from '../domain/news-priority.ts';
 import {SaxesParser} from 'saxes';
 import {AppError,type Env} from './types.ts';
 import {digest} from './auth.ts';
@@ -76,18 +78,19 @@ export async function refreshNews(env:Env,source:NewsSource,now=new Date(),fetch
     throw new AppError(502,detail);
   }
 }
-type Row={id:string;source:NewsSource;url:string;title:string;published_at:string;updated_at:string|null;first_seen:string;last_seen:string;fingerprint:string;headline_key:string;evidence:string;revision_seen:string|null};
+type Row={id:string;source:NewsSource;url:string;title:string;published_at:string;updated_at:string|null;first_seen:string;last_seen:string;fingerprint:string;headline_key:string;evidence:string;revision_seen:string|null;symbols:string|null};
 export async function readNews(env:Env,now=new Date()){
   const status=await env.DB.prepare('SELECT * FROM news_sources').all<{source:NewsSource;attempted_at:string;success_at:string|null;status:string;detail:string;limited:number;accepted:number;rejected:number}>();
   const sourceStates=NEWS_SOURCES.map(source=>{
     const row=status.results.find(r=>r.source===source);
     return {source,name:SOURCE_NAMES[source],state:!row?'unavailable':row.status==='failed'?'failed':!row.success_at||Date.parse(row.success_at)<now.getTime()-16*3600000?'stale':'current',lastAttempt:row?.attempted_at??null,lastSuccess:row?.success_at??null,detail:row?.detail??'未取得です。',limited:row?.limited===1,rejected:row?.rejected??0};
   });
-  const rows=await env.DB.prepare('SELECT news_items.*,news_revisions.observed_at AS revision_seen FROM news_items LEFT JOIN news_revisions ON news_revisions.id=news_items.id AND news_revisions.fingerprint=news_items.fingerprint WHERE news_items.published_at>=? ORDER BY news_items.published_at DESC,news_items.id LIMIT 80').bind(new Date(now.getTime()-30*86400000).toISOString()).all<Row>();
+  const rows=await env.DB.prepare('SELECT news_items.*,news_revisions.observed_at AS revision_seen,news_revisions.symbols AS symbols FROM news_items LEFT JOIN news_revisions ON news_revisions.id=news_items.id AND news_revisions.fingerprint=news_items.fingerprint WHERE news_items.published_at>=? ORDER BY news_items.published_at DESC,news_items.id LIMIT 80').bind(new Date(now.getTime()-30*86400000).toISOString()).all<Row>();
   const headlineCounts=new Map<string,number>();for(const r of rows.results){const key=r.published_at.slice(0,10)+'|'+r.headline_key;headlineCounts.set(key,(headlineCounts.get(key)??0)+1);}
   const seen=new Set<string>();let duplicates=0;
-  const articles=rows.results.filter(r=>{const key=r.url;if(seen.has(key)){duplicates++;return false;}seen.add(key);return true;}).slice(0,40).map(r=>({id:r.id,source:r.source,title:r.title,url:r.url,publishedAt:r.published_at,updatedAt:r.updated_at,firstSeen:r.first_seen,lastSeen:r.last_seen,revisionSeen:r.revision_seen??r.first_seen,fingerprint:r.fingerprint,evidence:JSON.parse(r.evidence) as NewsEvidence,similarHeadlines:(headlineCounts.get(r.published_at.slice(0,10)+'|'+r.headline_key)??1)-1,sourceState:sourceStates.find(s=>s.source===r.source)!.state}));
-  return {version:NEWS_VERSION,checkedAt:now.toISOString(),sources:sourceStates,articles,duplicates,displayLimited:rows.results.length>=80||rows.results.length-duplicates>40,
+  const ranked=rows.results.filter(r=>{const key=r.url;if(seen.has(key)){duplicates++;return false;}seen.add(key);return true;}).map(r=>({priority:prioritizeNews({title:r.title,source:r.source,publishedAt:r.published_at,updatedAt:r.updated_at,symbols:JSON.parse(r.symbols??'[]')},now),id:r.id,source:r.source,title:r.title,url:r.url,publishedAt:r.published_at,updatedAt:r.updated_at,firstSeen:r.first_seen,lastSeen:r.last_seen,revisionSeen:r.revision_seen??r.first_seen,fingerprint:r.fingerprint,evidence:JSON.parse(r.evidence) as NewsEvidence,similarHeadlines:(headlineCounts.get(r.published_at.slice(0,10)+'|'+r.headline_key)??1)-1,sourceState:sourceStates.find(s=>s.source===r.source)!.state})).sort((a,b)=>Number(b.priority.recent)-Number(a.priority.recent)||Number(b.priority.concern)-Number(a.priority.concern)||b.priority.score-a.priority.score||b.publishedAt.localeCompare(a.publishedAt));
+  const articles=ranked.slice(0,40),purchaseReview=summarizeNewsReview(ranked,sourceStates,now);
+  return {version:NEWS_VERSION,priorityVersion:PRIORITY_VERSION,purchaseReview,checkedAt:now.toISOString(),sources:sourceStates,articles,duplicates,displayLimited:rows.results.length>=80||rows.results.length-duplicates>40,
     reviewCandidates:articles.filter(a=>a.evidence.reviewRequired&&Date.parse(a.updatedAt??a.publishedAt)>=now.getTime()-48*3600000).length,
-    assessment:'見出しと配信元に基づく関連候補です。内容の真偽・独立した裏付け・株価の方向は未判定です。価格ルールや買い通知には反映しません。'};
+    assessment:'購入候補の価格下落に懸念材料がないか確認するための情報です。悪材料・懸念材料を優先します。記事がないことは悪材料がない証拠ではなく、下落の原因も未判定です。'};
 }

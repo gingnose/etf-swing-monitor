@@ -10,7 +10,7 @@ export async function currentPriceRules(env:Env,now=new Date()) {
   if(snapshots.length!==2||new Set(snapshots.map(s=>s.symbol)).size!==2||snapshots.some(s=>s.feed!=='sip'||s.adjustment!=='split'||s.closes.at(-1)?.date!==s.asOf)) throw new AppError(503,'価格の取得元・調整方式が一致しません。条件判定を保留します。');
   const decisions=snapshots.map(s=>priceDecision(s.symbol,s.closes));
   if(decisions[0].asOf!==decisions[1].asOf) throw new AppError(503,'両銘柄の日付が一致しません。');
-  return {version:PRICE_RULE_VERSION,state:'available' as const,detail:'価格条件の仮説を検証中です。購入推奨・上昇確率ではありません。ニュースと購入予算は未評価です。',decisions,inputHash:research.inputHash as string};
+  return {version:PRICE_RULE_VERSION,state:'available' as const,detail:'価格条件の仮説を検証中です。購入推奨・上昇確率ではありません。ニュースを含めた運用成績と購入予算は未評価です。',decisions,inputHash:research.inputHash as string};
 }
 export async function observePriceRules(env:Env,now=new Date()) {
   const current=await currentPriceRules(env,now);

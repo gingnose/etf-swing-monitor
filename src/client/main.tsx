@@ -1,3 +1,4 @@
+import type {NewsReview} from '../domain/news-review';
 import React, { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./styles.css";
@@ -104,6 +105,8 @@ function vapidBytes(key: string): Uint8Array<ArrayBuffer> {
   return Uint8Array.from(raw, (character) => character.charCodeAt(0));
 }
 function App() {
+  const [newsRefresh,setNewsRefresh]=useState(0);
+  const [newsReview,setNewsReview]=useState<NewsReview[]|null>(null);
   const [status, setStatus] = useState<Status | null>(null);
   const [auth, setAuth] = useState<
     "loading" | "required" | "ready" | "unavailable"
@@ -451,8 +454,8 @@ function App() {
                   );
                 })}
               </div>
-              <NewsPanel api={api} onAuthError={fail} />
-              <PriceRulesPanel api={api} onAuthError={fail} dataKey={JSON.stringify([status.dataState,status.latestRun?.createdAt,status.research?.snapshots.map(s=>s.retrievedAt)])} />
+              <PriceRulesPanel onRefreshNews={()=>setNewsRefresh(n=>n+1)} newsReview={newsReview} api={api} onAuthError={fail} dataKey={JSON.stringify([status.dataState,status.latestRun?.createdAt,status.research?.snapshots.map(s=>s.retrievedAt)])} />
+              <NewsPanel refreshKey={newsRefresh} api={api} onAuthError={fail} onReview={setNewsReview} />
               <PortfolioPanel api={api} onAuthError={fail} />
               <ResearchPanel research={status.research ?? null} />
               <p className="fine">価格の定期更新：{status.scheduledChecksEnabled ? "有効（毎日9:15・15:15・21:15 JSTごろ）" : "停止中（手動で更新できます）"}</p>

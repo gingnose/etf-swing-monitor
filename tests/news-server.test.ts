@@ -42,3 +42,9 @@ test('old articles do not become fresh simply because fetched today; repeated ti
  await refreshNews(f.env,'alpaca',f.now,fetcher,()=>f.now);const next=await readNews(f.env,f.now);
  assert.equal(next.articles.length,2);assert.equal(next.reviewCandidates,0);assert.equal(next.articles[0].similarHeadlines,0);
 });
+test('adverse material ranks ahead of positive and reference news before the display limit',async t=>{
+ const f=fixture();t.after(()=>f.db.close());const headlines=['Nvidia introduces new game','Nvidia raises quarterly guidance','Nvidia cuts quarterly guidance'];
+ const fetcher=(async()=>Response.json({news:headlines.map((headline,n)=>({headline,url:'https://www.benzinga.com/news/'+n,source:'benzinga',created_at:'2026-09-26T20:00:00Z',updated_at:null,symbols:['NVDA']}))}))as typeof fetch;
+ await refreshNews(f.env,'alpaca',f.now,fetcher,()=>f.now);const view=await readNews(f.env,f.now);
+ assert.equal(view.articles[0].priority.direction,'negative');assert.equal(view.articles[1].priority.direction,'positive');assert.equal(view.articles[2].priority.level,'normal');assert.equal(view.purchaseReview[0].state,'concerns');assert.equal(view.purchaseReview[0].incomplete,true);
+});
