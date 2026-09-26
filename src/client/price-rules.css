@@ -1,0 +1,18 @@
+.price-rules-panel {margin:24px 0;overflow-wrap:anywhere;color:#475569}
+.price-rules-panel p,.price-rules-panel li {font-size:13px;line-height:1.85}
+.price-rules-panel button {background:#ffffff;color:#475569;border:1px solid #e2e8f0;border-radius:8px;padding:10px 14px;min-height:44px}
+.price-rules-panel button:disabled {opacity:.5}
+.price-rules-panel .section-heading {gap:12px;flex-wrap:wrap}
+.price-rule-cards {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:20px 0}
+.price-rule-cards article {border:1px solid #e2e8f0;border-radius:10px;padding:16px;background:#ffffff;min-width:0}
+.price-rule-cards h3 {margin:0 0 12px;color:#475569}
+.rule-state {font-size:13px;font-weight:700;display:inline-block;border-radius:5px;background:#ffffff;padding:6px 9px}
+.rule-pause {background:#ffffff;color:#475569}.rule-matched{background:#ffffff;color:#475569}
+.price-rule-cards ul{padding-left:18px}.price-rule-cards dl{font-size:12px}.price-rule-cards dl>div{margin:10px 0}.price-rule-cards dd{margin:3px 0;color:#475569;font-variant-numeric:tabular-nums}
+.price-rules-panel summary{padding:14px 0;cursor:pointer}.price-rules-panel details{margin-bottom:15px;border-top:1px solid #e2e8f0}
+.rule-history{padding:0;list-style:none;max-height:360px;overflow:auto}.rule-history li{padding:12px 0;border-bottom:1px solid #e2e8f0}.rule-history span,.rule-history small{display:block}.rule-history small{color:#475569;font-size:11px}
+@media(max-width:640px){.price-rule-cards{grid-template-columns:1fr}.price-rules-panel{padding:18px}}
+.rule-table-scroll{overflow-x:auto;max-width:100%;border:1px solid #e2e8f0;border-radius:8px}.rule-table-scroll table{border-collapse:collapse;min-width:600px;font-size:12px;width:100%}.rule-table-scroll th,.rule-table-scroll td{padding:10px;text-align:right;border-bottom:1px solid #e2e8f0;white-space:nowrap}.rule-table-scroll th:first-child,.rule-table-scroll td:nth-child(2){text-align:left}.rule-table-scroll caption{font-size:12px;text-align:left;padding:12px;color:#475569}
+
+.news-cross-check{border-top:1px solid #e2e8f0;margin-top:16px;padding-top:12px;overflow-wrap:anywhere}.news-cross-check h4{margin:6px 0 12px}.news-cross-check strong{color:#475569}.news-cross-check a{color:#475569}.news-cross-check small{color:#475569}
+.entry-strategy h4{margin:20px 0 10px;color:#475569}.entry-strategy a{color:#475569;overflow-wrap:anywhere}.entry-strategy small{color:#475569;line-height:1.7}
