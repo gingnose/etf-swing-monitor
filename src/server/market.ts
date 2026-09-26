@@ -48,7 +48,7 @@ export function parseBars(payload: unknown, feed: 'sip' | 'iex', now: Date): { b
 
 export async function fetchDailyBars(env: Pick<Env, 'ALPACA_API_KEY' | 'ALPACA_API_SECRET' | 'ALPACA_FEED'>, now = new Date(), fetcher: typeof fetch = fetch, lookbackDays = 21, requestedSymbols: readonly string[] = symbols): Promise<Bar[]> {
   if (!requestedSymbols.length || requestedSymbols.some(s => !['SOXL','TQQQ'].includes(s))) throw new AppError(400,'対象銘柄が不正です。');
-  if (![21, 400].includes(lookbackDays)) throw new AppError(400, '取得期間が不正です。');
+  if (![21, 400, 1200].includes(lookbackDays)) throw new AppError(400, '取得期間が不正です。');
   if (!env.ALPACA_API_KEY || !env.ALPACA_API_SECRET) throw new AppError(503, 'AlpacaのAPIキーが未設定です。');
   if (env.ALPACA_FEED !== undefined && !['sip', 'iex'].includes(env.ALPACA_FEED)) throw new AppError(503, '価格データの取得元設定が不正です。');
   const feed = (env.ALPACA_FEED || 'sip') as 'sip' | 'iex';

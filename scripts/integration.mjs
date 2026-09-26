@@ -309,8 +309,14 @@ try {
       assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),true);
       const rulePanel=page.getByRole('region',{name:'価格ルールの検証',exact:true});
       await expect(rulePanel).toHaveAttribute('aria-busy','false');
-      await expect(rulePanel.getByRole('heading',{name:'SOXL',exact:true})).toBeVisible();
+      await expect(rulePanel.locator('.entry-strategy').filter({has:page.getByRole('heading',{name:'SOXL',exact:true})})).toBeVisible();
+      await expect(rulePanel.locator('.entry-strategy')).toHaveCount(2);
+      await expect(rulePanel.getByText('20日高値更新の出口方針',{exact:true})).toHaveCount(2);
+      await expect(rulePanel.locator('.entry-strategy').first()).toContainText('損切りなしを維持');
+      await expect(rulePanel.locator('.entry-strategy').first()).toContainText('3年順位を代用せず保留');
+      await rulePanel.getByText('旧モデルの観測・検証記録',{exact:true}).click();
       await expect(rulePanel.getByText('過去検証：20営業日後の値動き',{exact:true})).toBeVisible();
+      await rulePanel.getByText('過去検証：20営業日後の値動き',{exact:true}).click();
       await expect(rulePanel.getByText('-2.00%',{exact:true})).toBeVisible();
       const observed=page.waitForResponse(r=>r.url().endsWith('/api/price-rules/observe'));
       await rulePanel.getByRole('button',{name:'現在の条件を観測に保存',exact:true}).click();

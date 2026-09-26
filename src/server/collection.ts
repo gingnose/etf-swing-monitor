@@ -55,7 +55,7 @@ async function claim(env: Env, id: string, from: string, to: string, now: Date):
   return job;
 }
 async function collectPart(env: Env, requested: Date, symbol: string, calendar: Calendar, deps: CollectionDependencies): Promise<Part> {
-  const bars = await fetchDailyBars(env, requested, deps.fetcher ?? fetch, 400, [symbol]);
+  const bars = await fetchDailyBars(env, requested, deps.fetcher ?? fetch, 1200, [symbol]);
   const snapshots = buildSnapshots(bars, clock(deps), [symbol]);
   if (snapshots.length !== 1 || snapshots[0].symbol !== symbol) throw new AppError(502, '価格履歴の銘柄が一致しません。');
   validateCalendar(snapshots, calendar);
@@ -114,7 +114,7 @@ export async function collectPublish(env: Env, id: string, now = new Date(), dep
     assertLive(job, completed);
     const completedAt = completed.toISOString();
     const payload = JSON.stringify({ version: INDICATOR_VERSION, snapshots, calendar, latestBars,
-      source: 'Alpaca', currency: 'USD', lookbackDays: 400, requestedAt: job.requested_at, fetchedAt: completedAt, collectionId: id });
+      source: 'Alpaca', currency: 'USD', lookbackDays: 1200, requestedAt: job.requested_at, fetchedAt: completedAt, collectionId: id });
     const detail = result(id, null).detail;
     const writes = await env.DB.batch([
       ...latestBars.map(b => env.DB.prepare(`INSERT INTO bars(symbol,timestamp,close,volume,feed,adjustment,received_at)

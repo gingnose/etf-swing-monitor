@@ -15,3 +15,4 @@
 .rule-table-scroll{overflow-x:auto;max-width:100%;border:1px solid #304759;border-radius:8px}.rule-table-scroll table{border-collapse:collapse;min-width:600px;font-size:12px;width:100%}.rule-table-scroll th,.rule-table-scroll td{padding:10px;text-align:right;border-bottom:1px solid #304759;white-space:nowrap}.rule-table-scroll th:first-child,.rule-table-scroll td:nth-child(2){text-align:left}.rule-table-scroll caption{font-size:12px;text-align:left;padding:12px;color:#b4c9d9}
 
 .news-cross-check{border-top:1px solid #385164;margin-top:16px;padding-top:12px;overflow-wrap:anywhere}.news-cross-check h4{margin:6px 0 12px}.news-cross-check strong{color:#ffe1a6}.news-cross-check a{color:#b5eee1}.news-cross-check small{color:#a9bfd2}
+.entry-strategy h4{margin:20px 0 10px;color:#d4e0ea}.entry-strategy a{color:#b5eee1;overflow-wrap:anywhere}.entry-strategy small{color:#a9bfd2;line-height:1.7}

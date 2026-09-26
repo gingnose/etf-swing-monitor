@@ -7,7 +7,7 @@ export async function fetchCalendar(env: DataEnv, now: Date, fetcher: typeof fet
   if (!env.ALPACA_API_KEY || !env.ALPACA_API_SECRET) throw new AppError(503, 'AlpacaのAPIキーが未設定です。');
   const today = nyDate(now);
   const base = Date.parse(today + 'T00:00:00Z');
-  const start = new Date(base - 400 * 86400_000).toISOString().slice(0,10);
+  const start = new Date(base - 1200 * 86400_000).toISOString().slice(0,10);
   const through = new Date(base + 14 * 86400_000).toISOString().slice(0,10);
   const url = new URL('https://paper-api.alpaca.markets/v2/calendar');
   url.search = new URLSearchParams({start,end:through}).toString();
@@ -17,7 +17,7 @@ export async function fetchCalendar(env: DataEnv, now: Date, fetcher: typeof fet
   if (!response.ok) throw new AppError(502, `取引日カレンダーを取得できません（HTTP ${response.status}）。`);
   let data: unknown;
   try { data = await response.json(); } catch { throw new AppError(502, '取引日カレンダーの形式が不正です。'); }
-  if (!Array.isArray(data) || data.length < 200 || data.length > 415) throw new AppError(502, '取引日カレンダーが不完全です。');
+  if (!Array.isArray(data) || data.length < 200 || data.length > 1215) throw new AppError(502, '取引日カレンダーが不完全です。');
   const dates: string[] = data.map(row => row?.date);
   if (dates.some(d => typeof d !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(d) || !Number.isFinite(Date.parse(d)) || new Date(d).toISOString().slice(0,10)!==d || d<start || d>through) || new Set(dates).size!==dates.length) throw new AppError(502, '取引日カレンダーが不正です。');
   dates.sort();

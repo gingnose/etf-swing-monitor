@@ -40,8 +40,8 @@ test('Snapshot sorts, rejects duplicates and mismatched/missing trading dates',(
 
 test('Calendar refuses a truncated future horizon and missing credentials',async()=>{
  const {fetchCalendar}=await import('../src/server/history.ts');
- const start=Date.parse('2025-08-22T00:00:00Z');
- const dates=Array.from({length:415},(_,i)=>new Date(start+i*86400_000)).filter(d=>d.getUTCDay()!==0&&d.getUTCDay()!==6).map(d=>({date:d.toISOString().slice(0,10)}));
+ const start=Date.parse('2026-09-26T00:00:00Z')-1200*86400_000;
+ const dates=Array.from({length:1215},(_,i)=>new Date(start+i*86400_000)).filter(d=>d.getUTCDay()!==0&&d.getUTCDay()!==6).map(d=>({date:d.toISOString().slice(0,10)}));
  const env={ALPACA_API_KEY:'fixture',ALPACA_API_SECRET:'fixture'};
  const result=await fetchCalendar(env,now,(async()=>Response.json(dates)) as typeof fetch);
  assert.equal(result.through,dates.at(-1)!.date);

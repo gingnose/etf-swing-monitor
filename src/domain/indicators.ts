@@ -22,7 +22,7 @@ export type Snapshot = { symbol: string; asOf: string; retrievedAt: string; star
 export function buildSnapshots(bars: Bar[], retrievedAt: Date, requestedSymbols: readonly string[] = ['SOXL', 'TQQQ']): Snapshot[] {
   const snapshots = requestedSymbols.map(symbol => {
     const rows = bars.filter(b => b.symbol === symbol).sort((a, b) => a.timestamp < b.timestamp ? -1 : a.timestamp > b.timestamp ? 1 : 0);
-    if (!rows.length || rows.length > 400) throw new Error('Invalid history size');
+    if (!rows.length || rows.length > 1200) throw new Error('Invalid history size');
     const dates = rows.map(b => b.timestamp.slice(0, 10));
     if (new Set(dates).size !== dates.length) throw new Error('Duplicate market date');
     if (rows.some(b => b.feed !== rows[0].feed)) throw new Error('Mixed data feeds');

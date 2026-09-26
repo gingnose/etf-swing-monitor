@@ -2,6 +2,7 @@ import test from 'node:test';import assert from 'node:assert/strict';
 import {DatabaseSync} from 'node:sqlite';import {readFileSync} from 'node:fs';
 import type {Env} from '../src/server/types.ts';
 import {scheduledRun} from '../src/server/index.ts';
+import {entryStrategies} from '../src/domain/entry-strategies.ts';
 import {currentPriceRules,observePriceRules,readPriceRules} from '../src/server/price-rules.ts';
 function fixture(){
   const db=new DatabaseSync(':memory:');
@@ -51,4 +52,9 @@ test('the separate scheduled observation stage is idempotent and never queues a 
   await scheduledRun(env,now);await scheduledRun(env,now);
   assert.equal(f.db.prepare('SELECT COUNT(*) AS n FROM price_rule_observations').get()!.n,1);
   assert.equal(f.db.prepare('SELECT COUNT(*) AS n FROM notification_jobs').get()!.n,0);
+});
+test('new entry indicators remain available with partial long history and suppress stale results',async t=>{
+ const f=fixture();t.after(()=>f.db.close());
+ const current=await currentPriceRules(f.env,f.now);assert.equal(current.strategyInputs.length,2);const input=current.strategyInputs[0],result=entryStrategies(input.symbol,input.closes);assert.notEqual(result.breakout.matched,null);assert.equal(result.longValue.matched,null);
+ f.db.exec("UPDATE runs SET status='failed'");assert.deepEqual((await currentPriceRules(f.env,f.now)).strategyInputs,[]);
 });
