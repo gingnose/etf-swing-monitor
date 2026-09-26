@@ -52,9 +52,18 @@ export async function fetchDailyBars(env: Pick<Env, 'ALPACA_API_KEY' | 'ALPACA_A
     try {
       response = await fetcher(barsUrl(now, feed, next || undefined), {
         headers: { 'APCA-API-KEY-ID': env.ALPACA_API_KEY, 'APCA-API-SECRET-KEY': env.ALPACA_API_SECRET },
-        signal: AbortSignal.timeout(12_000), redirect: 'error',
+        signal: AbortSignal.timeout(12_000), redirect: 'manual',
       });
-    } catch { throw new AppError(502, 'Alpacaへ接続できませんでした。時間をおいて再確認してください。'); }
+    } catch (error) {
+      // Map runtime failures to fixed messages; never expose upstream errors or credentials.
+      const message = error instanceof Error ? error.message : '';
+      const reason = /illegal invocation|incorrect this/i.test(message) ? '実行環境の関数呼び出し'
+        : /redirect/i.test(message) ? 'リダイレクト'
+        : error instanceof Error && ['TimeoutError', 'AbortError'].includes(error.name) ? 'タイムアウト'
+        : /invalid time|invalid date/i.test(message) ? '日付形式'
+        : '通信';
+      throw new AppError(502, `Alpacaへ接続できませんでした（${reason}）。時間をおいて再確認してください。`);
+    }
     if (!response.ok) {
       if ([401, 403].includes(response.status)) throw new AppError(502, `Alpacaの認証・${feed.toUpperCase()}データ権限を確認してください。有料プランへ自動変更はしません。`);
       if (response.status === 429) throw new AppError(429, 'Alpacaの利用上限です。再試行を停止しました。');

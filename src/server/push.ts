@@ -42,7 +42,7 @@ export async function sendTestPush(env: Env, tag: string) {
     const payload = await buildPushPayload({ data: JSON.stringify({ title: 'ETF Swing Monitor', body: '通知テストです。売買の提案ではありません。', url: '/', tag }), options: { ttl: 600 } }, sub, {
       publicKey: env.VAPID_PUBLIC_KEY!, privateKey: env.VAPID_PRIVATE_KEY!, subject: env.VAPID_SUBJECT!,
     });
-    const response = await fetch(sub.endpoint, { ...payload, redirect: 'error', signal: AbortSignal.timeout(10_000) });
+    const response = await fetch(sub.endpoint, { ...payload, redirect: 'manual', signal: AbortSignal.timeout(10_000) });
     if ([404, 410].includes(response.status)) {
       await env.DB.prepare('DELETE FROM push_subscription WHERE id=1 AND endpoint=?').bind(sub.endpoint).run();
       throw new AppError(409, '通知登録の有効期限が切れました。再登録してください。');

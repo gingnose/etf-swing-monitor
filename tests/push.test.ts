@@ -23,7 +23,7 @@ test('Web Cryptoで暗号化し、通知サービスへVAPIDで送信（通信�
   globalThis.fetch = (async (url, init) => {
     count++;
     assert.equal(url, endpoint);
-    assert.equal(init?.redirect, 'error');
+    assert.equal(init?.redirect, 'manual');
     const headers = new Headers(init?.headers);
     assert.match(headers.get('Authorization') || '', /^vapid /);
     assert.equal(headers.get('Content-Encoding'), 'aes128gcm');

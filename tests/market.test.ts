@@ -20,7 +20,7 @@ test('ページ分割された両銘柄を取得し認証情報を固定APIだ�
   const bars = await fetchDailyBars({ ALPACA_API_KEY: 'fixture', ALPACA_API_SECRET: 'fixture' }, now, (async (input, init) => {
     const url = new URL(String(input));
     assert.equal(url.origin, 'https://data.alpaca.markets');
-    assert.equal(init?.redirect, 'error');
+    assert.equal(init?.redirect, 'manual');
     assert.equal(new Headers(init?.headers).get('APCA-API-KEY-ID'), 'fixture');
     calls++;
     if (calls === 1) return Response.json({ bars: { SOXL: [bar] }, next_page_token: 'next' });
@@ -55,4 +55,18 @@ test('壊れた時刻・負価格・無限大の出来高を拒否', () => {
 });
 test('認証未設定では外部APIを呼ばない', async () => {
   await assert.rejects(fetchDailyBars({}, now, (async () => { assert.fail('must not call'); }) as typeof fetch), /未設定/);
+});
+
+test('リダイレクトは追跡せずエラーにし、接続エラーの秘密値も返さない', async () => {
+  const env = { ALPACA_API_KEY: 'fixture', ALPACA_API_SECRET: 'fixture-secret' };
+  let calls = 0;
+  await assert.rejects(fetchDailyBars(env, now, (async (_input, init) => {
+    calls++;
+    assert.equal(init?.redirect, 'manual');
+    return new Response(null, { status: 302, headers: { Location: 'https://example.invalid/' } });
+  }) as typeof fetch), /HTTP 302/);
+  assert.equal(calls, 1);
+  await assert.rejects(fetchDailyBars(env, now, (async () => {
+    throw new TypeError('redirect error fixture-secret');
+  }) as typeof fetch), error => error instanceof Error && error.message.includes('リダイレクト') && !error.message.includes('fixture-secret'));
 });
