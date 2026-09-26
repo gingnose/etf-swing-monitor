@@ -1,6 +1,6 @@
 # SOXL / TQQQ Swing Monitor — 実装計画案
 
-状態: 2026-09-26、初版のユーザー方針を確定。技術実証事項は第2節。P1接続確認版を実装。クラウド配置・実データ取得・Androidでのインストールと予約通知到着を確認済み。価格履歴・参考指標・資金保有台帳も実装（[台帳仕様](PORTFOLIO.md)）。詳細は [DATA_PHASE.md](DATA_PHASE.md)。無料枠の継続計測などは未完了。詳細は [P1_STATUS.md](P1_STATUS.md)。
+状態: 2026-09-26、初版のユーザー方針を確定。技術実証事項は第2節。P1接続確認版を実装。クラウド配置・実データ取得・Androidでのインストールと予約通知到着を確認済み。価格履歴・参考指標・資金保有台帳も実装（[台帳仕様](PORTFOLIO.md)）。詳細は [DATA_PHASE.md](DATA_PHASE.md)。価格条件2仮説の表示・過去イベント分析・初回観測保存を追加（[仕様](PRICE_RULES.md)）。条件一致から買い通知への昇格は未実施。無料枠の継続計測などは未完了。詳細は [P1_STATUS.md](P1_STATUS.md)。
 公開先: https://github.com/gingnose/etf-swing-monitor
 コードはMITライセンスで公開。稼働アプリと運用データは所有者専用。
 

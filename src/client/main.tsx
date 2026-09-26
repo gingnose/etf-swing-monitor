@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./styles.css";
+import PriceRulesPanel from "./PriceRulesPanel";
 import PortfolioPanel from "./PortfolioPanel";
 import ResearchPanel, { type ResearchPayload } from "./ResearchPanel";
 
@@ -449,6 +450,7 @@ function App() {
                   );
                 })}
               </div>
+              <PriceRulesPanel api={api} onAuthError={fail} dataKey={JSON.stringify([status.dataState,status.latestRun?.createdAt,status.research?.snapshots.map(s=>s.retrievedAt)])} />
               <PortfolioPanel api={api} onAuthError={fail} />
               <ResearchPanel research={status.research ?? null} />
               <p className="fine">価格の定期更新：{status.scheduledChecksEnabled ? "有効（毎日9:15・15:15・21:15 JSTごろ）" : "停止中（手動で更新できます）"}</p>

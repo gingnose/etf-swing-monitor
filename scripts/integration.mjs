@@ -138,11 +138,35 @@ try {
   assert.equal(published.collectionId,jobId);
   assert.equal(published.latestBars.length,2);
   assert.equal(published.state,'available');
+  // Price hypotheses use the same authenticated, fresh history, and immutable observations.
+  assert.equal((await fetch(base + '/api/price-rules')).status, 401);
+  const ruleGet = () => fetch(base + '/api/price-rules', { headers: { Cookie: researchCookie } });
+  assert.ok((await (await ruleGet()).json()).decisions.every(d => d.state === 'insufficient'));
+  assert.equal((await req('/api/price-rules/observe', {}, researchCookie)).status, 409);
+  const ruleDates = [];
+  for (let d = new Date(yesterday); ruleDates.length < 230; d.setUTCDate(d.getUTCDate() - 1)) {
+    if (![0, 6].includes(d.getUTCDay())) ruleDates.unshift(d.toISOString().slice(0, 10));
+  }
+  const ruleFixture = { ...fixture, calendar: { dates: [...ruleDates, today], through: future },
+    snapshots: fixture.snapshots.map(s => ({ ...s, count: ruleDates.length, start: ruleDates[0], asOf: ruleDates.at(-1),
+      closes: ruleDates.map((date, i) => ({ date, close: 100 + i * .2 + Math.sin(i * .4) * 4 })) })) };
+  const setRuleFixture = () => cli(['d1','execute','DB','--local','--command',`UPDATE market_history SET payload='${quote(ruleFixture)}' WHERE feed='sip'`]);
+  setRuleFixture();
+  const rules = await (await ruleGet()).json();
+  assert.equal(rules.state, 'available'); assert.equal(rules.decisions.length, 2);
+  assert.equal((await ruleGet()).headers.get('cache-control'), 'no-store');
+  const observationResponses = await Promise.all([req('/api/price-rules/observe', {}, researchCookie), req('/api/price-rules/observe', {}, researchCookie)]);
+  const observationWrites = await Promise.all(observationResponses.map(r => { assert.equal(r.status, 200); return r.json(); }));
+  assert.equal(observationWrites.filter(r => r.recorded).length, 1);
+  assert.equal((await (await ruleGet()).json()).observations.length, 1);
+  assert.equal((await fetch(base + '/api/price-rules/observe', { method: 'POST', headers: { Origin: 'https://other.example', 'Content-Type': 'application/json', Cookie: researchCookie }, body: '{}' })).status, 403);
   // Stale history is retained but not presented as current metrics.
   fixture.calendar.through='2000-01-01';
   cli(['d1','execute','DB','--local','--command',`UPDATE market_history SET payload='${JSON.stringify(fixture).replaceAll("'","''")}' WHERE feed='sip'`]);
   assert.equal((await (await getResearch()).json()).state,'stale');
   assert.deepEqual((await (await getResearch()).json()).snapshots,[]);
+  const staleRules=await (await ruleGet()).json();
+  assert.equal(staleRules.state,'stale');assert.deepEqual(staleRules.decisions,[]);assert.equal(staleRules.observations.length,1);
   // Portfolio checks use only this run's local D1 and fixture owner session.
   const privatePortfolio = await fetch(base + '/api/portfolio');
   assert.equal(privatePortfolio.status, 401);
@@ -221,6 +245,9 @@ try {
   console.log('PASS: private history API, insufficient-history nulls, stale suppression and concurrent update guard');
   console.log('PASS: isolated Worker+D1 integration (owner auth, CSRF, secret isolation, missing data, endpoint validation, scheduled tests, concurrent daily cap, logout, PWA)');
   if (process.argv.includes('--browser')) {
+    setRuleFixture();
+    const evaluationFixture={version:'price-hypotheses-v1',rows:[{symbol:'SOXL',period:'後期',rule:'pullback',completed:3,meanPct:-2,medianPct:1,worstReturnPct:-12}]};
+    cli(['d1','execute','DB','--local','--command',`INSERT INTO price_rule_evaluations VALUES ('price-hypotheses-v1','${current.toISOString()}','${quote(evaluationFixture)}')`]);
     // Reset ONLY portfolio tables in this disposable local fixture; keep all other integration state.
     // The singleton row must remain present so the browser exercises first-time registration.
     assert.ok(state.startsWith(dir + '/'));
@@ -243,6 +270,16 @@ try {
       assert.ok(await page.getByText('SOXL', { exact: true }).first().isVisible());
       assert.ok(await page.getByText('TQQQ', { exact: true }).first().isVisible());
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true);
+      const rulePanel=page.getByRole('region',{name:'価格ルールの検証',exact:true});
+      await expect(rulePanel).toHaveAttribute('aria-busy','false');
+      await expect(rulePanel.getByRole('heading',{name:'SOXL',exact:true})).toBeVisible();
+      await expect(rulePanel.getByText('過去検証：20営業日後の値動き',{exact:true})).toBeVisible();
+      await expect(rulePanel.getByText('-2.00%',{exact:true})).toBeVisible();
+      const observed=page.waitForResponse(r=>r.url().endsWith('/api/price-rules/observe'));
+      await rulePanel.getByRole('button',{name:'現在の条件を観測に保存',exact:true}).click();
+      assert.equal((await observed).status(),200);
+      await expect(rulePanel).toHaveAttribute('aria-busy','false');
+      assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),true);
       const portfolio = page.getByRole('region', { name: '資産台帳', exact: true });
       await expect(portfolio.getByRole('heading', { name: '開始時点を登録', exact: true })).toBeVisible();
       await expect(portfolio.getByLabel('開始日（JST）', { exact: true })).toHaveValue(portfolioDate);

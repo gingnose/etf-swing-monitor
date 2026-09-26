@@ -1,5 +1,6 @@
 import { AppError, type Env } from './types.ts';
 import { login, limit, readJson, requireOwner, requireSameOrigin, sessionCookie } from './auth.ts';
+import { readPriceRules, observePriceRules } from './price-rules.ts';
 import { readPortfolio, writePortfolio } from './portfolio.ts';
 import { readResearch, refreshCalendar } from './history.ts';
 import { collectStart, collectContinue, collectPublish } from './collection.ts';
@@ -25,6 +26,11 @@ async function api(request: Request, env: Env) {
   }
   if (path === '/api/portfolio' && method === 'GET') return json(await readPortfolio(env));
   if (path === '/api/portfolio' && method === 'POST') return json(await writePortfolio(env, await readJson(request)));
+  if (path === '/api/price-rules' && method === 'GET') return json(await readPriceRules(env));
+  if (path === '/api/price-rules/observe' && method === 'POST') {
+    await limit(env,'price-observe',6,3600_000);
+    return json(await observePriceRules(env));
+  }
   if (path === '/api/research' && method === 'GET') return json(await readResearch(env));
   if (path === '/api/status' && method === 'GET') {
     const latestRun = await env.DB.prepare('SELECT status,created_at AS createdAt,detail FROM runs ORDER BY created_at DESC LIMIT 1')
@@ -93,7 +99,7 @@ export async function scheduledRun(env: Env, now = new Date()) {
   if (!env.OWNER_TOKEN_HASH) return;
   // Keep push encryption and market acquisition in separate CPU budgets.
   if (await processNotificationJobs(env, now)) return;
-  if (env.ENABLE_SCHEDULED_CHECKS === 'true' && now.getUTCMinutes() < 20 && [0, 6, 12].includes(now.getUTCHours())) {
+  if (env.ENABLE_SCHEDULED_CHECKS === 'true' && now.getUTCMinutes() < 25 && [0, 6, 12].includes(now.getUTCHours())) {
     const stage = Math.floor(now.getUTCMinutes()/5);
     const hour = now.toISOString().slice(0,13);
     const slot = hour + ':' + stage;
@@ -104,6 +110,8 @@ export async function scheduledRun(env: Env, now = new Date()) {
         else if (stage === 1) {
           const result = await collectStart(env, now);
           await env.DB.prepare('UPDATE scheduled_checks SET job_id=? WHERE slot=?').bind(result.jobId,slot).run();
+        } else if (stage === 4) {
+          await observePriceRules(env,now);
         } else {
           const job = await env.DB.prepare('SELECT job_id FROM scheduled_checks WHERE slot=?').bind(hour+':1').first<{job_id:string|null}>();
           if (job?.job_id) {
@@ -120,6 +128,7 @@ export async function scheduledRun(env: Env, now = new Date()) {
     const historyCutoff = new Date(now.getTime() - 365 * 86400_000).toISOString();
     const cutoff = new Date(now.getTime() - 30 * 86400_000).toISOString();
     await env.DB.batch([
+      env.DB.prepare('DELETE FROM price_rule_observations WHERE observed_at < ?').bind(historyCutoff),
       env.DB.prepare('DELETE FROM market_collection_jobs WHERE expires_at < ?').bind(now.toISOString()),
       env.DB.prepare('DELETE FROM market_observations WHERE retrieved_at < ?').bind(historyCutoff),
       env.DB.prepare('DELETE FROM sessions WHERE expires_at < ?').bind(now.getTime()),
