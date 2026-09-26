@@ -55,3 +55,5 @@ npm run test:browser
 ## ライセンス
 
 [MIT](LICENSE) — Copyright (c) 2026 Gingnose
+
+時間軸別の価格順位の探索: `npm run study:position`。過去5〜756営業日の価格位置と、翌営業日終値を起点とする5〜252営業日後の変化、+10%到達までの時間、追加下落を比較します。[方法と制約](docs/PRICE_POSITION.md)。入力と結果はprivateに保存し、本番の判定は変更しません。
