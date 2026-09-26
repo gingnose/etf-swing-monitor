@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./styles.css";
+import NewsPanel from "./NewsPanel";
 import PriceRulesPanel from "./PriceRulesPanel";
 import PortfolioPanel from "./PortfolioPanel";
 import ResearchPanel, { type ResearchPayload } from "./ResearchPanel";
@@ -450,6 +451,7 @@ function App() {
                   );
                 })}
               </div>
+              <NewsPanel api={api} onAuthError={fail} />
               <PriceRulesPanel api={api} onAuthError={fail} dataKey={JSON.stringify([status.dataState,status.latestRun?.createdAt,status.research?.snapshots.map(s=>s.retrievedAt)])} />
               <PortfolioPanel api={api} onAuthError={fail} />
               <ResearchPanel research={status.research ?? null} />

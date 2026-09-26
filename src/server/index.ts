@@ -1,5 +1,7 @@
 import { AppError, type Env } from './types.ts';
 import { login, limit, readJson, requireOwner, requireSameOrigin, sessionCookie } from './auth.ts';
+import { readNews, refreshNews } from './news.ts';
+import { NEWS_SOURCES } from '../domain/news.ts';
 import { readPriceRules, observePriceRules } from './price-rules.ts';
 import { readPortfolio, writePortfolio } from './portfolio.ts';
 import { readResearch, refreshCalendar } from './history.ts';
@@ -23,6 +25,14 @@ async function api(request: Request, env: Env) {
   if (path === '/api/logout' && method === 'POST') {
     await env.DB.prepare('DELETE FROM sessions WHERE token_hash=?').bind(sessionHash).run();
     return json({ ok: true }, 200, { 'Set-Cookie': sessionCookie(request, '', 0) });
+  }
+  if (path === '/api/news' && method === 'GET') return json(await readNews(env));
+  if (path === '/api/news/refresh' && method === 'POST') {
+    const {source}=await readJson(request);
+    const selected=NEWS_SOURCES.find(s=>s===source);
+    if(!selected)throw new AppError(400,'ニュース提供元を指定してください。');
+    await limit(env,'news-refresh:'+selected,3,3600_000);
+    return json(await refreshNews(env,selected));
   }
   if (path === '/api/portfolio' && method === 'GET') return json(await readPortfolio(env));
   if (path === '/api/portfolio' && method === 'POST') return json(await writePortfolio(env, await readJson(request)));
@@ -99,7 +109,7 @@ export async function scheduledRun(env: Env, now = new Date()) {
   if (!env.OWNER_TOKEN_HASH) return;
   // Keep push encryption and market acquisition in separate CPU budgets.
   if (await processNotificationJobs(env, now)) return;
-  if (env.ENABLE_SCHEDULED_CHECKS === 'true' && now.getUTCMinutes() < 25 && [0, 6, 12].includes(now.getUTCHours())) {
+  if (env.ENABLE_SCHEDULED_CHECKS === 'true' && now.getUTCMinutes() < 40 && ([0, 6, 12].includes(now.getUTCHours()) || now.getUTCMinutes() >= 25)) {
     const stage = Math.floor(now.getUTCMinutes()/5);
     const hour = now.toISOString().slice(0,13);
     const slot = hour + ':' + stage;
@@ -112,6 +122,8 @@ export async function scheduledRun(env: Env, now = new Date()) {
           await env.DB.prepare('UPDATE scheduled_checks SET job_id=? WHERE slot=?').bind(result.jobId,slot).run();
         } else if (stage === 4) {
           await observePriceRules(env,now);
+        } else if (stage >= 5) {
+          await refreshNews(env,NEWS_SOURCES[stage-5],now);
         } else {
           const job = await env.DB.prepare('SELECT job_id FROM scheduled_checks WHERE slot=?').bind(hour+':1').first<{job_id:string|null}>();
           if (job?.job_id) {
@@ -128,6 +140,8 @@ export async function scheduledRun(env: Env, now = new Date()) {
     const historyCutoff = new Date(now.getTime() - 365 * 86400_000).toISOString();
     const cutoff = new Date(now.getTime() - 30 * 86400_000).toISOString();
     await env.DB.batch([
+      env.DB.prepare('DELETE FROM news_items WHERE last_seen < ?').bind(new Date(now.getTime()-90*86400_000).toISOString()),
+      env.DB.prepare('DELETE FROM news_revisions WHERE observed_at < ?').bind(new Date(now.getTime()-90*86400_000).toISOString()),
       env.DB.prepare('DELETE FROM price_rule_observations WHERE observed_at < ?').bind(historyCutoff),
       env.DB.prepare('DELETE FROM market_collection_jobs WHERE expires_at < ?').bind(now.toISOString()),
       env.DB.prepare('DELETE FROM market_observations WHERE retrieved_at < ?').bind(historyCutoff),

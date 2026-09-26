@@ -138,6 +138,21 @@ try {
   assert.equal(published.collectionId,jobId);
   assert.equal(published.latestBars.length,2);
   assert.equal(published.state,'available');
+  // News metadata is owner-only; unavailable/failed sources never imply no risk.
+  assert.equal((await fetch(base+'/api/news')).status,401);
+  const getNews=()=>fetch(base+'/api/news',{headers:{Cookie:researchCookie}});
+  const emptyNews=await(await getNews()).json();assert.equal(emptyNews.sources.length,3);assert.equal(emptyNews.articles.length,0);
+  assert.ok(emptyNews.sources.every(s=>s.state==='unavailable'));
+  assert.equal((await getNews()).headers.get('cache-control'),'no-store');
+  assert.equal((await req('/api/news/refresh',{source:'https://evil.example'},researchCookie)).status,400);
+  assert.equal((await req('/api/news/refresh',{source:'alpaca'},researchCookie)).status,502);
+  assert.equal((await(await getNews()).json()).sources.find(s=>s.source==='alpaca').state,'failed');
+  assert.equal((await fetch(base+'/api/news/refresh',{method:'POST',headers:{Origin:'https://other.example','Content-Type':'application/json',Cookie:researchCookie},body:JSON.stringify({source:'fed'})})).status,403);
+  const newsTime=new Date().toISOString();
+  const newsEvidence={version:'news-evidence-v1',targets:['SOXL','TQQQ'],reasons:['NVDAのニュースタグ（架空テスト）'],topics:['業績・見通し'],reviewRequired:true,sourceKind:'reporting',verification:'source-only',direction:'unknown'};
+  const newsPayload=JSON.stringify(newsEvidence).replaceAll("'","''");
+  cli(['d1','execute','DB','--local','--command',`INSERT INTO news_items VALUES ('news-fixture','alpaca','https://www.benzinga.com/news/fixture','Fixture: company denies outlook rumor','${newsTime}',NULL,'${newsTime}','${newsTime}','${newsTime}','fixture-hash','fixture headline','${newsPayload}'); INSERT INTO news_revisions VALUES ('news-fixture','fixture-hash','${newsTime}','Fixture: company denies outlook rumor','${newsTime}',NULL,'${newsPayload}','["NVDA"]');`]);
+  const sampleNews=await(await getNews()).json();assert.equal(sampleNews.articles.length,1);assert.equal(sampleNews.articles[0].evidence.direction,'unknown');assert.equal(sampleNews.articles[0].sourceState,'failed');assert.equal(sampleNews.articles[0].revisionSeen,newsTime);
   // Price hypotheses use the same authenticated, fresh history, and immutable observations.
   assert.equal((await fetch(base + '/api/price-rules')).status, 401);
   const ruleGet = () => fetch(base + '/api/price-rules', { headers: { Cookie: researchCookie } });
@@ -270,6 +285,15 @@ try {
       assert.ok(await page.getByText('SOXL', { exact: true }).first().isVisible());
       assert.ok(await page.getByText('TQQQ', { exact: true }).first().isVisible());
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true);
+      const newsPanel=page.getByRole('region',{name:'ニュースと出所',exact:true});
+      await expect(newsPanel.getByRole('link',{name:'Fixture: company denies outlook rumor'})).toBeVisible();
+      await expect(newsPanel.getByText('取得失敗',{exact:true})).toBeVisible();
+      await expect(newsPanel.getByText(/真偽・独立した裏付け・株価の方向は未判定/)).toBeVisible();
+      const articleLink=newsPanel.getByRole('link',{name:'Fixture: company denies outlook rumor'});
+      await expect(articleLink).toHaveAttribute('rel','noopener noreferrer');
+      await newsPanel.getByLabel('ニュースの関連銘柄').selectOption('SOXL');
+      await expect(articleLink).toBeVisible();
+      assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),true);
       const rulePanel=page.getByRole('region',{name:'価格ルールの検証',exact:true});
       await expect(rulePanel).toHaveAttribute('aria-busy','false');
       await expect(rulePanel.getByRole('heading',{name:'SOXL',exact:true})).toBeVisible();
