@@ -26,3 +26,9 @@ backups/
 
 # OS files
 .DS_Store
+
+# Local setup, deployment ids, integration test state
+wrangler.deploy.jsonc
+.test-state/
+.test-dist/
+.validation-build/

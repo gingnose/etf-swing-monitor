@@ -2,9 +2,36 @@
 
 SOXLを主対象、TQQQを副対象に、価格とニュースを監視するAndroid向け個人用PWAのプロジェクトです。
 
-**現在は計画段階です。アプリ、売買シグナル、クラウド監視はまだ実装されていません。**
+**P1の接続確認版を実装しました。売買判断・ニュース分析・資金管理は未実装です。**
 
-## 予定する機能
+所有者ログイン、SOXL/TQQQの日足取得、Android向けPWA、即時・予約プッシュ通知の実装があります。ローカルテストと実際のAlpaca/Cloudflare/Androidでの実証は区別しています。外部アカウント接続と実機通知は未確認です。
+
+## 起動
+
+Node.js 22.12以降（24系推奨）。
+
+```sh
+npm ci
+npm run setup
+npm run dev
+```
+
+生成された `private/owner-token.txt` の所有者キーでログインします。Alpacaキーが未設定でも画面を確認できますが、ダミーの価格や売買判断は表示しません。
+
+[無料アカウントの設定・デプロイ・Android確認手順](docs/SETUP.md)
+
+## 検証
+
+```sh
+npm run check
+npm run test:browser
+```
+
+`check` は型・単体・ビルド・Worker/D1統合テスト。ブラウザテストはローカルChromeまたはPlaywright Chromiumを使用します（未インストール時は `npx playwright install chromium`）。実データ取得・端末への到着を代用するテストではありません。
+
+[現在の実証状況](docs/P1_STATUS.md)
+
+## プロジェクト全体で予定する機能
 
 - 数週間のスイング向けに購入・買い増し・利益確定の判断材料と出典を表示。
 - 含み損時は売却候補を出さず、悪材料と買い増し停止を表示。
